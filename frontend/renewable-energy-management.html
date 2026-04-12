@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能源管理平台 - 建築物配置+可再生能源</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 50%, #e0f2fe 100%);
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a365d 100%);
+            color: #ffffff;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        body.dark .navbar {
+            background: rgba(30, 41, 59, 0.95);
+            border-bottom-color: #475569;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .btn-toggle:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark .btn-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .main-wrapper {
+            display: flex;
+            width: 100%;
+            margin-top: 70px;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: white;
+            border-right: 2px solid #e5e7eb;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        body.dark .sidebar {
+            background: #1e293b;
+            border-right-color: #475569;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-box {
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        body.dark .stat-box {
+            background: #334155;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        body.dark .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-unit {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        /* 能源卡片 */
+        .energy-card {
+            padding: 12px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: grab;
+        }
+
+        body.dark .energy-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .energy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .energy-name {
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .energy-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        .canvas-area {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e0f2fe 100%);
+        }
+
+        body.dark .canvas-area {
+            background: linear-gradient(135deg, #1a365d 0%, #0f172a 100%);
+        }
+
+        .canvas {
+            position: relative;
+            min-height: 600px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 3px dashed #ccc;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        body.dark .canvas {
+            background: rgba(30, 41, 59, 0.5);
+            border-color: #475569;
+        }
+
+        .canvas.drag-over {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+        }
+
+        /* 建築物卡片 */
+        .building-card {
+            position: absolute;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            min-width: 220px;
+            cursor: move;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark .building-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .building-card.selected {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .building-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .building-icon {
+            font-size: 32px;
+        }
+
+        .building-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-small {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: #f0f4f8;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        body.dark .btn-small {
+            background: #334155;
+        }
+
+        .btn-small:hover {
+            background: #e5e7eb;
+        }
+
+        .building-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .building-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 11px;
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        body.dark .building-stats {
+            background: #334155;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 9px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #3b82f6;
+            font-size: 12px;
+        }
+
+        /* 模態 */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 550px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark .modal-content {
+            background: #1e293b;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        body.dark .form-input,
+        body.dark .form-select {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .meter-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 12px;
+        }
+
+        .meter-checkbox {
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        body.dark .meter-checkbox {
+            background: #334155;
+        }
+
+        .meter-checkbox input {
+            cursor: pointer;
+        }
+
+        /* 能源生成標籤 */
+        .energy-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .energy-savings {
+            padding: 12px;
+            background: #e0f2fe;
+            border-left: 4px solid #06b6d4;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 12px;
+        }
+
+        body.dark .energy-savings {
+            background: #082f49;
+        }
+
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        body.dark .btn-secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .info-box {
+            padding: 12px;
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #1e40af;
+            margin-bottom: 16px;
+        }
+
+        body.dark .info-box {
+            background: #1e3a8a;
+            color: #93c5fd;
+        }
+
+        /* 圖表區域 */
+        .chart-container {
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        body.dark .chart-container {
+            background: #1e293b;
+        }
+
+        .energy-mix {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .energy-item {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        body.dark .energy-item {
+            background: #334155;
+        }
+
+        .energy-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .energy-percent {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .energy-type {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        body.dark .energy-type {
+            color: #aaa;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: #e5e7eb;
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            margin-top: 12px;
+        }
+
+        body.dark .progress-bar-container {
+            background: #334155;
+        }
+
+        .progress-segment {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .progress-solar {
+            background: linear-gradient(90deg, #fbbf24, #f97316);
+        }
+
+        .progress-wind {
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+        }
+
+        .progress-hydro {
+            background: linear-gradient(90deg, #06b6d4, #0891b2);
+        }
+
+        .progress-grid {
+            background: linear-gradient(90deg, #d1d5db, #9ca3af);
+        }
+
+        .tab-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        body.dark .tab-btn {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="navbar">
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <span>能源管理平台 - 可再生能源統計</span>
+        </div>
+        <div class="nav-controls">
+            <button class="btn-toggle" onclick="toggleDarkMode()">
+                <span id="theme-toggle">🌙</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <!-- 左側邊欄 -->
+        <div class="sidebar">
+            <!-- 園區能源統計 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">⚡ 園區能源統計</div>
+                
+                <div class="stat-box">
+                    <div class="stat-label">園區可再生能源發電</div>
+                    <div class="stat-value" id="renewable-power">0</div>
+                    <div class="stat-unit">kW</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">電網購電</div>
+                    <div class="stat-value" id="grid-power">0</div>
+                    <div class="stat-unit">kW</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">綠色能源占比</div>
+                    <div class="stat-value" id="renewable-percent">0%</div>
+                    <div class="stat-unit">可再生能源</div>
+                </div>
+            </div>
+
+            <!-- 碳排對比 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">🌍 碳排減少對比</div>
+                
+                <div class="stat-box">
+                    <div class="stat-label">實際碳排</div>
+                    <div class="stat-value" id="actual-carbon">0</div>
+                    <div class="stat-unit">kg CO₂</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">如果全用電網電</div>
+                    <div class="stat-value" id="grid-carbon">0</div>
+                    <div class="stat-unit">kg CO₂</div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-label">減少碳排量</div>
+                    <div style="display: flex; align-items: baseline; gap: 4px;">
+                        <div class="stat-value" id="carbon-saved">0</div>
+                        <div style="font-size: 14px; color: #10b981; font-weight: bold;">↓</div>
+                    </div>
+                    <div class="stat-unit">kg CO₂（節省）</div>
+                </div>
+            </div>
+
+            <!-- 可再生能源來源 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">☀️ 可再生能源配置</div>
+                <div class="info-box">
+                    點擊下方能源卡片進行編輯配置
+                </div>
+                <div id="renewable-list">
+                    <div style="padding: 20px; text-align: center; color: #999;">
+                        點擊「編輯」添加可再生能源
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="sidebar-section">
+                <button class="btn btn-primary" style="width: 100%;" onclick="addRenewableSource()">
+                    ➕ 添加能源來源
+                </button>
+            </div>
+        </div>
+
+        <!-- 畫布區域 -->
+        <div class="canvas-area">
+            <div class="canvas" id="canvas">
+                <div style="text-align: center; color: #999; padding: 40px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🏢</div>
+                    <div style="font-size: 16px; margin-bottom: 8px;">建築物能源配置區域</div>
+                    <div style="font-size: 12px;">左側邊欄選擇建築物模板並拖放到此區域</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯建築物模態 -->
+    <div class="modal" id="building-modal">
+        <div class="modal-content">
+            <div class="modal-title">編輯建築物</div>
+            
+            <div class="form-group">
+                <label class="form-label">建築物名稱</label>
+                <input type="text" class="form-input" id="building-name-input">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">選擇關聯電錶</label>
+                <div id="meter-selector" class="meter-selector"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">碳排係數 (kg CO₂/kWh)</label>
+                <input type="number" class="form-input" id="carbon-coefficient" value="0.5" min="0" step="0.01">
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="saveBuilding()">💾 保存</button>
+                <button class="btn btn-secondary" onclick="closeModal()">✕ 取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 可再生能源編輯模態 -->
+    <div class="modal" id="renewable-modal">
+        <div class="modal-content">
+            <div class="modal-title">配置可再生能源</div>
+            
+            <div class="form-group">
+                <label class="form-label">能源類型</label>
+                <select class="form-select" id="renewable-type">
+                    <option value="solar">☀️ 太陽能 (Solar)</option>
+                    <option value="wind">💨 風電 (Wind)</option>
+                    <option value="hydro">💧 水力 (Hydro)</option>
+                    <option value="other">⚡ 其他可再生</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">設備名稱</label>
+                <input type="text" class="form-input" id="renewable-name" placeholder="例：屋頂太陽能板">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">裝機容量 (kW)</label>
+                <input type="number" class="form-input" id="renewable-capacity" value="10" min="0.1" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">當前發電功率 (kW)</label>
+                <input type="number" class="form-input" id="renewable-power" value="5" min="0" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">碳排係數 (kg CO₂/kWh)</label>
+                <input type="number" class="form-input" id="renewable-carbon-coef" value="0.02" min="0" step="0.01" placeholder="可再生能源通常很低">
+            </div>
+
+            <div class="energy-savings">
+                💡 <strong>提示：</strong> 太陽能、風電和水力的碳排係數接近 0，但考慮製造和運維，建議設置 0.01-0.05
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="saveRenewable()">💾 保存</button>
+                <button class="btn btn-secondary" onclick="closeRenewableModal()">✕ 取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局數據
+        let buildings = JSON.parse(localStorage.getItem('buildings')) || {};
+        let renewableSources = JSON.parse(localStorage.getItem('renewableSources')) || [];
+        let selectedBuildingId = null;
+        let editingRenewableId = null;
+        const mockMeters = [
+            { id: 'meter_001', name: 'A棟電錶', power: 85, energy: 2040 },
+            { id: 'meter_002', name: 'B棟電錶', power: 120, energy: 2880 },
+            { id: 'meter_003', name: 'C棟電錶', power: 145, energy: 3480 },
+            { id: 'meter_004', name: 'D棟電錶', power: 92, energy: 2208 },
+            { id: 'meter_005', name: 'E棟電錶', power: 62, energy: 1488 },
+        ];
+
+        const buildingTypes = {
+            office: { name: '寫字樓', icon: '🏢' },
+            factory: { name: '工廠', icon: '🏭' },
+            warehouse: { name: '倉庫', icon: '🏗️' },
+            retail: { name: '商業中心', icon: '🏬' },
+            datacenter: { name: '數據中心', icon: '🖥️' },
+            residential: { name: '住宅區', icon: '🏠' },
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            loadRenewableList();
+            setupDragAndDrop();
+            updateStats();
+            
+            // 模擬實時更新
+            setInterval(() => {
+                mockMeters.forEach(meter => {
+                    meter.power = Math.max(20, meter.power + (Math.random() - 0.5) * 20);
+                    meter.energy = Math.min(5000, meter.energy + (Math.random() - 0.5) * 50);
+                });
+                
+                renewableSources.forEach(source => {
+                    const variation = (Math.random() - 0.5) * source.capacity * 0.3;
+                    source.power = Math.max(0, Math.min(source.capacity, source.power + variation));
+                });
+                
+                updateStats();
+            }, 5000);
+        });
+
+        // 深浚模式
+        function initDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark');
+                document.getElementById('theme-toggle').textContent = '☀️';
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // 可再生能源管理
+        function loadRenewableList() {
+            const list = document.getElementById('renewable-list');
+            if (renewableSources.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">點擊「添加能源來源」開始配置</div>';
+                return;
+            }
+
+            list.innerHTML = renewableSources.map(source => {
+                const icons = {
+                    solar: '☀️',
+                    wind: '💨',
+                    hydro: '💧',
+                    other: '⚡'
+                };
+                return `
+                    <div class="energy-card">
+                        <div class="energy-header">
+                            <div class="energy-name">${icons[source.type]} ${source.name}</div>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="btn-small" onclick="editRenewable('${source.id}')">✏️</button>
+                                <button class="btn-small" onclick="deleteRenewable('${source.id}')">🗑️</button>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: #666; margin-bottom: 4px;">
+                            容量: ${source.capacity} kW | 發電: ${source.power.toFixed(1)} kW
+                        </div>
+                        <div style="width: 100%; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
+                            <div style="width: ${(source.power/source.capacity)*100}%; height: 100%; background: linear-gradient(90deg, #fbbf24, #f97316);"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addRenewableSource() {
+            editingRenewableId = null;
+            document.getElementById('renewable-type').value = 'solar';
+            document.getElementById('renewable-name').value = '';
+            document.getElementById('renewable-capacity').value = '10';
+            document.getElementById('renewable-power').value = '5';
+            document.getElementById('renewable-carbon-coef').value = '0.02';
+            document.getElementById('renewable-modal').classList.add('show');
+        }
+
+        function editRenewable(id) {
+            const source = renewableSources.find(s => s.id === id);
+            if (!source) return;
+
+            editingRenewableId = id;
+            document.getElementById('renewable-type').value = source.type;
+            document.getElementById('renewable-name').value = source.name;
+            document.getElementById('renewable-capacity').value = source.capacity;
+            document.getElementById('renewable-power').value = source.power;
+            document.getElementById('renewable-carbon-coef').value = source.carbonCoef;
+            document.getElementById('renewable-modal').classList.add('show');
+        }
+
+        function saveRenewable() {
+            const source = {
+                id: editingRenewableId || 'renewable_' + Date.now(),
+                type: document.getElementById('renewable-type').value,
+                name: document.getElementById('renewable-name').value || '可再生能源',
+                capacity: parseFloat(document.getElementById('renewable-capacity').value) || 10,
+                power: parseFloat(document.getElementById('renewable-power').value) || 0,
+                carbonCoef: parseFloat(document.getElementById('renewable-carbon-coef').value) || 0.02
+            };
+
+            if (editingRenewableId) {
+                const index = renewableSources.findIndex(s => s.id === editingRenewableId);
+                if (index >= 0) renewableSources[index] = source;
+            } else {
+                renewableSources.push(source);
+            }
+
+            saveRenewables();
+            loadRenewableList();
+            closeRenewableModal();
+            updateStats();
+        }
+
+        function deleteRenewable(id) {
+            if (confirm('確定要刪除此能源設備嗎？')) {
+                renewableSources = renewableSources.filter(s => s.id !== id);
+                saveRenewables();
+                loadRenewableList();
+                updateStats();
+            }
+        }
+
+        function saveRenewables() {
+            localStorage.setItem('renewableSources', JSON.stringify(renewableSources));
+        }
+
+        function closeRenewableModal() {
+            document.getElementById('renewable-modal').classList.remove('show');
+        }
+
+        // 建築物管理（簡化版）
+        function setupDragAndDrop() {
+            const canvas = document.getElementById('canvas');
+            canvas.addEventListener('dragover', e => {
+                e.preventDefault();
+                canvas.classList.add('drag-over');
+            });
+            canvas.addEventListener('dragleave', () => canvas.classList.remove('drag-over'));
+        }
+
+        function closeModal() {
+            document.getElementById('building-modal').classList.remove('show');
+        }
+
+        function saveBuilding() {
+            // 簡化版本
+            closeModal();
+        }
+
+        // 統計更新
+        function updateStats() {
+            // 計算建築物總用電
+            let totalBuildingEnergy = 0;
+            let totalBuildingCarbon = 0;
+
+            Object.values(buildings).forEach(building => {
+                let energy = 0;
+                building.meters?.forEach(meterId => {
+                    const meter = mockMeters.find(m => m.id === meterId);
+                    if (meter) energy += meter.energy || 0;
+                });
+                totalBuildingEnergy += energy;
+                totalBuildingCarbon += energy * (building.carbonCoefficient || 0.5);
+            });
+
+            // 計算可再生能源總發電
+            let totalRenewablePower = 0;
+            let totalRenewableEnergy = 0;
+            renewableSources.forEach(source => {
+                totalRenewablePower += source.power || 0;
+                totalRenewableEnergy += source.power || 0; // 簡化計算
+            });
+
+            // 計算電網購電
+            let totalPower = 0;
+            mockMeters.forEach(meter => {
+                totalPower += meter.power || 0;
+            });
+
+            const gridPower = Math.max(0, totalPower - totalRenewablePower);
+            const gridEnergy = Math.max(0, totalBuildingEnergy - totalRenewableEnergy);
+
+            // 計算綠色能源占比
+            const renewablePercent = totalPower > 0 ? ((totalRenewablePower / totalPower) * 100).toFixed(1) : 0;
+
+            // 計算碳排
+            const actualCarbon = totalBuildingCarbon + (totalRenewableEnergy * 0.02); // 可再生能源碳排很低
+            const gridCarbon = totalBuildingEnergy * 0.5; // 假設電網碳排係數 0.5
+            const carbonSaved = Math.max(0, gridCarbon - actualCarbon);
+
+            // 更新 UI
+            document.getElementById('renewable-power').textContent = totalRenewablePower.toFixed(1);
+            document.getElementById('grid-power').textContent = gridPower.toFixed(1);
+            document.getElementById('renewable-percent').textContent = renewablePercent + '%';
+            document.getElementById('actual-carbon').textContent = actualCarbon.toFixed(2);
+            document.getElementById('grid-carbon').textContent = gridCarbon.toFixed(2);
+            document.getElementById('carbon-saved').textContent = carbonSaved.toFixed(2);
+        }
+
+        // 模態事件
+        document.getElementById('renewable-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'renewable-modal') closeRenewableModal();
+        });
+
+        document.getElementById('building-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'building-modal') closeModal();
+        });
+    </script>
+</body>
+</html>

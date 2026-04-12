@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電表管理系統 - Advance 版本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #4FC3F7;
+            --color-secondary: #9E8B7B;
+            --color-accent: #CDDC39;
+            --color-dark: #1a1a1a;
+            --color-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f5f5f5;
+            color: var(--color-dark);
+        }
+
+        body.dark {
+            background: #0f1419;
+            color: var(--color-white);
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: white;
+            border-bottom: 4px solid var(--color-primary);
+            display: flex;
+            align-items: center;
+            padding: 0 32px;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        body.dark .navbar {
+            background: #1a1f2e;
+        }
+
+        .navbar-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: var(--color-primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 12px;
+        }
+
+        .container {
+            margin-top: 70px;
+            padding: 32px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--color-primary);
+        }
+
+        .card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        body.dark .card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: var(--color-primary);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 12px;
+            background: white;
+            color: var(--color-dark);
+        }
+
+        body.dark .form-input,
+        body.dark .form-select {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0288D1;
+        }
+
+        .data-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .data-item {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        body.dark .data-item {
+            background: #334155;
+        }
+
+        .data-label {
+            font-size: 10px;
+            color: #666;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        body.dark .data-label {
+            color: #aaa;
+        }
+
+        .data-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .data-unit {
+            font-size: 9px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 12px;
+            border-left: 4px solid var(--color-primary);
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        body.dark .info-box {
+            background: rgba(79, 195, 247, 0.1);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+            margin-right: 4px;
+        }
+
+        .status-offline {
+            background: #f44336;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .data-display {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <!-- EliteGets 防盗版和防破解保护系统 -->
+    <script src="/universal-license-protection.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', async () => {
+            await window.initializeLicenseProtection(localStorage.getItem('__elitegets_license_key') || '', 'advance');
+        });
+    </script>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-title">
+            ⚡ 電表管理系統
+            <span class="version-badge">📊 ADVANCE</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section-title">🔌 電表配置（Advance 版本）</div>
+
+        <div class="card">
+            <div class="info-box">
+                ℹ️ Advance 版本支持：<br>
+                ✓ 單個電表 | ✓ 3 種基本協議（Modbus/MQTT/HTTP） | ✓ 實時數據監控 | ✗ 多電表 | ✗ 歷史分析
+            </div>
+
+            <div class="card-title">📡 通訊協議配置</div>
+
+            <div class="form-group">
+                <label class="form-label">選擇協議（Advance：3 種）</label>
+                <select class="form-select">
+                    <option value="modbus">Modbus TCP</option>
+                    <option value="mqtt">MQTT</option>
+                    <option value="http">HTTP REST API</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">IP 地址</label>
+                <input type="text" class="form-input" placeholder="192.168.1.100">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">端口號</label>
+                <input type="number" class="form-input" placeholder="502" value="502">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">更新頻率</label>
+                <select class="form-select">
+                    <option value="5">5 秒</option>
+                    <option value="10">10 秒</option>
+                    <option value="30">30 秒</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="connectMeter()">🔗 連接電表</button>
+        </div>
+
+        <div class="section-title">📊 實時數據</div>
+
+        <div class="card">
+            <div style="margin-bottom: 16px;">
+                <span class="status-indicator"></span>
+                <strong>狀態：已連接</strong> | Modbus TCP | 192.168.1.100:502
+            </div>
+
+            <div class="data-display">
+                <div class="data-item">
+                    <div class="data-label">實時功率</div>
+                    <div class="data-value">48.5</div>
+                    <div class="data-unit">kW</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">日累計</div>
+                    <div class="data-value">485.2</div>
+                    <div class="data-unit">kWh</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">電壓</div>
+                    <div class="data-value">220.5</div>
+                    <div class="data-unit">V</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">電流</div>
+                    <div class="data-value">220.2</div>
+                    <div class="data-unit">A</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" style="margin-top: 16px;" onclick="refreshData()">🔄 刷新數據</button>
+        </div>
+
+        <div class="section-title">🔌 充電樁管理</div>
+
+        <div class="card" style="border: 2px solid var(--color-primary); background: #e3f2fd;">
+            <div style="text-align: center; padding: 40px 20px;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🔌</div>
+                <div style="font-size: 18px; font-weight: bold; margin-bottom: 12px; color: var(--color-primary);">充電樁管理</div>
+                <div style="font-size: 14px; color: #666; margin-bottom: 20px;">
+                    此功能僅在 Ultimate 版本中提供
+                </div>
+                <button class="btn btn-primary" onclick="upgradeToUltimate()" style="max-width: 300px;">
+                    👑 升級到 Ultimate ($1490/year)
+                </button>
+            </div>
+        </div>
+
+        <div class="section-title">🎮 虛擬電表</div>
+
+        <div class="card">
+            <div class="card-title">虛擬電表配置（Advance：1 種場景）</div>
+
+            <div class="form-group">
+                <label class="form-label">電表編號</label>
+                <input type="text" class="form-input" placeholder="VIRT-001">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">基礎功率</label>
+                <input type="number" class="form-input" placeholder="30" value="30">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">場景</label>
+                <select class="form-select">
+                    <option value="random">隨機變動</option>
+                </select>
+                <small style="color: #666; display: block; margin-top: 4px;">
+                    💡 提示：升級到 Pro 版本解鎖更多場景（辦公樓、工廠、住宅等）
+                </small>
+            </div>
+
+            <button class="btn btn-primary" onclick="createVirtual()">🎮 生成虛擬電表</button>
+        </div>
+
+        <div class="section-title">🔧 故障診斷</div>
+
+        <div class="card">
+            <button class="btn btn-primary" style="margin-bottom: 8px;" onclick="testConnection()">🧪 測試連接</button>
+            <button class="btn btn-primary" onclick="viewDiagnostics()">🔍 查看診斷</button>
+
+            <div style="background: #f9f9f9; padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 12px;">
+                <div style="margin-bottom: 8px;"><strong>最後診斷結果：</strong></div>
+                ✓ 連接正常<br>
+                ✓ 數據流暢通<br>
+                ✓ 系統運行正常
+            </div>
+        </div>
+
+        <div style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-top: 20px; text-align: center;">
+            <h3 style="margin-bottom: 12px;">⭐ 升級到 Pro 版本</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+                獲得多電表支持、完整協議、歷史分析等功能
+            </p>
+            <button class="btn btn-primary" style="max-width: 300px;" onclick="upgradeToPro()">
+                🚀 升級到 Pro ($490/year)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function connectMeter() {
+            alert('✅ 電表已連接');
+        }
+
+        function refreshData() {
+            alert('✅ 數據已刷新');
+        }
+
+        function createVirtual() {
+            alert('✅ 虛擬電表已創建');
+        }
+
+        function testConnection() {
+            alert('✅ 連接測試成功\n延遲：45ms');
+        }
+
+        function viewDiagnostics() {
+            alert('✅ 系統診斷報告\n所有項目正常');
+        }
+
+        function upgradeToPro() {
+            alert('前往升級頁面\nmeter-management-system-pro.html');
+            // window.location.href = 'meter-management-system-pro.html';
+        }
+    </script>
+</body>
+</html>

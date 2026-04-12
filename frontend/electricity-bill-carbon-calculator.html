@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電費帳單碳當量計算系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 50%, #e0f2fe 100%);
+            color: #333;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a365d 100%);
+            color: #ffffff;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        body.dark .navbar {
+            background: rgba(30, 41, 59, 0.95);
+            border-bottom-color: #475569;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .btn-toggle:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark .btn-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .main-wrapper {
+            display: flex;
+            width: 100%;
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+        }
+
+        .sidebar {
+            width: 380px;
+            background: white;
+            border-right: 2px solid #e5e7eb;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        body.dark .sidebar {
+            background: #1e293b;
+            border-right-color: #475569;
+        }
+
+        .content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 統計卡片 */
+        .stat-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        body.dark .stat-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        body.dark .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #f97316, #fb923c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-unit {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        body.dark .stat-unit {
+            color: #aaa;
+        }
+
+        /* 表單 */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        body.dark .form-input,
+        body.dark .form-select {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #f97316;
+        }
+
+        /* 按鈕 */
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #f97316, #fb923c);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        body.dark .btn-secondary {
+            background: #475569;
+            color: white;
+        }
+
+        /* 表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-bottom: 24px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        body.dark .data-table {
+            background: #1e293b;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: right;
+        }
+
+        .data-table th:first-child,
+        .data-table td:first-child {
+            text-align: left;
+        }
+
+        .data-table th {
+            background: #f9fafb;
+            font-weight: bold;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        body.dark .data-table th {
+            background: #334155;
+            border-bottom-color: #475569;
+        }
+
+        .data-table td {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        body.dark .data-table td {
+            border-bottom-color: #475569;
+        }
+
+        .data-table tr:hover {
+            background: #f9fafb;
+        }
+
+        body.dark .data-table tr:hover {
+            background: #334155;
+        }
+
+        .data-table input {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        body.dark .data-table input {
+            background: #1e293b;
+            border-color: #475569;
+            color: white;
+        }
+
+        /* 圖表卡片 */
+        .chart-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        body.dark .chart-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        /* 柱狀圖 */
+        .bar-chart {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 8px;
+            align-items: flex-end;
+            height: 250px;
+        }
+
+        .bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+
+        .bar-fill {
+            width: 100%;
+            background: linear-gradient(180deg, #f97316, #fb923c);
+            border-radius: 4px 4px 0 0;
+            min-height: 20px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .bar:hover .bar-fill {
+            opacity: 0.8;
+            box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+        }
+
+        .bar-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #999;
+            text-align: center;
+        }
+
+        body.dark .bar-label {
+            color: #aaa;
+        }
+
+        .bar-value {
+            font-size: 10px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        /* 模態 */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        body.dark .modal-content {
+            background: #1e293b;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 24px;
+        }
+
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* 訊息框 */
+        .info-box {
+            padding: 12px;
+            background: #fed7aa;
+            border-left: 4px solid #f97316;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #92400e;
+            margin-bottom: 16px;
+        }
+
+        body.dark .info-box {
+            background: #78350f;
+            color: #fed7aa;
+        }
+
+        /* 碳排對比 */
+        .carbon-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .comparison-box {
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+            border-left: 4px solid;
+            text-align: center;
+        }
+
+        body.dark .comparison-box {
+            background: #1e293b;
+        }
+
+        .comparison-box.total {
+            border-left-color: #f97316;
+        }
+
+        .comparison-box.grid {
+            border-left-color: #999;
+        }
+
+        .comparison-box.saved {
+            border-left-color: #10b981;
+        }
+
+        .comparison-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        body.dark .comparison-label {
+            color: #aaa;
+        }
+
+        .comparison-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .comparison-unit {
+            font-size: 11px;
+            color: #999;
+        }
+
+        body.dark .comparison-unit {
+            color: #aaa;
+        }
+
+        /* 標籤頁 */
+        .tab-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        body.dark .tab-buttons {
+            border-bottom-color: #475569;
+        }
+
+        .tab-btn {
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        body.dark .tab-btn {
+            color: #aaa;
+        }
+
+        .tab-btn.active {
+            color: #f97316;
+            border-bottom-color: #f97316;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 響應式 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 320px;
+            }
+
+            .carbon-comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-wrapper {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 2px solid #e5e7eb;
+            }
+
+            .bar-chart {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="navbar">
+        <div class="logo">
+            <div class="logo-icon">📄</div>
+            <span>電費帳單碳當量計算系統</span>
+        </div>
+        <div class="nav-controls">
+            <button class="btn-toggle" onclick="toggleDarkMode()">
+                <span id="theme-toggle">🌙</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <!-- 左側邊欄 -->
+        <div class="sidebar">
+            <!-- 年度統計 -->
+            <div class="section">
+                <div class="section-title">📊 年度統計</div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">年度用電量</div>
+                    <div class="stat-value" id="annual-power">0</div>
+                    <div class="stat-unit">kWh</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">平均月用電</div>
+                    <div class="stat-value" id="avg-power">0</div>
+                    <div class="stat-unit">kWh/月</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">年度電費</div>
+                    <div class="stat-value" id="annual-cost">0</div>
+                    <div class="stat-unit">元</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">平均單價</div>
+                    <div class="stat-value" id="avg-price">0</div>
+                    <div class="stat-unit">元/kWh</div>
+                </div>
+            </div>
+
+            <!-- 碳排統計 -->
+            <div class="section">
+                <div class="section-title">🌍 碳排統計</div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">年度碳排量</div>
+                    <div class="stat-value" id="annual-carbon">0</div>
+                    <div class="stat-unit">kg CO₂</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">月均碳排</div>
+                    <div class="stat-value" id="avg-carbon">0</div>
+                    <div class="stat-unit">kg CO₂/月</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">相當於植樹</div>
+                    <div class="stat-value" id="tree-count">0</div>
+                    <div class="stat-unit">棵樹</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">汽車行駛當量</div>
+                    <div class="stat-value" id="car-km">0</div>
+                    <div class="stat-unit">公里</div>
+                </div>
+            </div>
+
+            <!-- 設定 -->
+            <div class="section">
+                <div class="section-title">⚙️ 設定參數</div>
+                
+                <div class="form-group">
+                    <label class="form-label">電網碳排係數</label>
+                    <input type="number" id="carbon-coef" value="0.5" min="0" step="0.01" class="form-input" placeholder="kg CO₂/kWh">
+                    <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                        建議值：台灣 0.5-0.6
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">基準日期</label>
+                    <input type="month" id="reference-date" class="form-input">
+                </div>
+
+                <button class="btn btn-primary" onclick="exportData()">
+                    💾 導出數據
+                </button>
+            </div>
+        </div>
+
+        <!-- 主內容區 -->
+        <div class="content">
+            <!-- 標籤頁 -->
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('input')">📝 數據輸入</button>
+                <button class="tab-btn" onclick="switchTab('analysis')">📊 分析報告</button>
+                <button class="tab-btn" onclick="switchTab('comparison')">🌍 碳排對比</button>
+            </div>
+
+            <!-- 數據輸入標籤 -->
+            <div id="input" class="tab-content active">
+                <div class="section">
+                    <div class="section-title">📝 月度電費數據輸入</div>
+                    <div class="info-box">
+                        💡 請輸入過去 12 個月的電費帳單資料。系統將自動計算年度用電和碳排放。
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>月份</th>
+                                <th>契約容量 (kW)</th>
+                                <th>尖峰 (kWh)</th>
+                                <th>離峰 (kWh)</th>
+                                <th>總用電 (kWh)</th>
+                                <th>電費 (元)</th>
+                                <th>單價 (元/kWh)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body">
+                            <!-- 動態生成 -->
+                        </tbody>
+                    </table>
+
+                    <button class="btn btn-primary" onclick="calculateAll()">
+                        🔄 重新計算
+                    </button>
+                </div>
+            </div>
+
+            <!-- 分析報告標籤 -->
+            <div id="analysis" class="tab-content">
+                <div class="section">
+                    <div class="section-title">📈 月度用電趨勢</div>
+                    <div class="chart-card">
+                        <div class="chart-title">用電量 (kWh)</div>
+                        <div class="bar-chart" id="power-chart">
+                            <!-- 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">💰 月度電費趨勢</div>
+                    <div class="chart-card">
+                        <div class="chart-title">電費 (元)</div>
+                        <div class="bar-chart" id="cost-chart">
+                            <!-- 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📊 詳細統計</div>
+                    <div class="chart-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>項目</th>
+                                    <th>數值</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>年度總用電量</strong></td>
+                                    <td id="stat-total-power">0 kWh</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>月均用電量</strong></td>
+                                    <td id="stat-avg-power">0 kWh</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>最高月用電</strong></td>
+                                    <td id="stat-max-power">0 kWh</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>最低月用電</strong></td>
+                                    <td id="stat-min-power">0 kWh</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>年度總電費</strong></td>
+                                    <td id="stat-total-cost">0 元</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>月均電費</strong></td>
+                                    <td id="stat-avg-cost">0 元</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>平均電價</strong></td>
+                                    <td id="stat-avg-price">0 元/kWh</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>尖離峰比例</strong></td>
+                                    <td id="stat-peak-ratio">0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 碳排對比標籤 -->
+            <div id="comparison" class="tab-content">
+                <div class="section">
+                    <div class="section-title">🌍 碳排放量對比與分析</div>
+                    
+                    <div class="carbon-comparison">
+                        <div class="comparison-box total">
+                            <div class="comparison-label">年度碳排量</div>
+                            <div class="comparison-value" id="comp-actual-carbon">0</div>
+                            <div class="comparison-unit">kg CO₂</div>
+                        </div>
+                        <div class="comparison-box grid">
+                            <div class="comparison-label">平均電網係數</div>
+                            <div class="comparison-value" id="comp-grid-coef">0.5</div>
+                            <div class="comparison-unit">kg CO₂/kWh</div>
+                        </div>
+                        <div class="comparison-box saved">
+                            <div class="comparison-label">年度碳排</div>
+                            <div class="comparison-value" id="comp-annual-carbon">0</div>
+                            <div class="comparison-unit">kg CO₂</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">月度碳排趨勢 (kg CO₂)</div>
+                        <div class="bar-chart" id="carbon-chart">
+                            <!-- 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">♻️ 環保當量分析</div>
+                    <div class="summary-grid">
+                        <div class="chart-card" style="padding: 16px;">
+                            <div style="font-size: 12px; color: #999; margin-bottom: 12px;">相當於植樹</div>
+                            <div style="font-size: 32px; font-weight: bold; color: #f97316;">
+                                <span id="equiv-trees">0</span> 棵樹
+                            </div>
+                            <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                                20 kg CO₂/棵/年
+                            </div>
+                        </div>
+                        <div class="chart-card" style="padding: 16px;">
+                            <div style="font-size: 12px; color: #999; margin-bottom: 12px;">汽車少跑</div>
+                            <div style="font-size: 32px; font-weight: bold; color: #f97316;">
+                                <span id="equiv-car-km">0</span> 公里
+                            </div>
+                            <div style="font-size: 11px; color: #999; margin-top: 4px;">
+                                0.25 kg CO₂/km
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📋 減碳建議</div>
+                    <div class="chart-card">
+                        <div style="display: grid; gap: 12px;">
+                            <div style="padding: 12px; background: #fed7aa; border-radius: 8px; border-left: 4px solid #f97316;">
+                                <div style="font-weight: bold; color: #92400e;">💡 節能建議</div>
+                                <div style="font-size: 12px; color: #92400e; margin-top: 4px;" id="suggestions">
+                                    輸入完整的電費數據後，將顯示個性化節能建議。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 數據存儲
+        let monthlyData = JSON.parse(localStorage.getItem('monthlyElectricityData')) || {};
+        const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+        const carbonCoef = 0.5; // 預設碳排係數 (kg CO₂/kWh)
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            loadData();
+            initializeTable();
+            calculateAll();
+            document.getElementById('carbon-coef').addEventListener('change', calculateAll);
+        });
+
+        // 深浚模式
+        function initDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark');
+                document.getElementById('theme-toggle').textContent = '☀️';
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // 初始化表格
+        function initializeTable() {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = months.map((month, i) => {
+                const monthNum = String(i + 1).padStart(2, '0');
+                const data = monthlyData[monthNum] || {};
+                
+                return `
+                    <tr>
+                        <td><strong>${month}</strong></td>
+                        <td>
+                            <input type="number" 
+                                   value="${data.capacity || ''}" 
+                                   data-month="${monthNum}" 
+                                   data-field="capacity"
+                                   onchange="updateData()"
+                                   min="0" step="0.1" placeholder="契約容量">
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   value="${data.peak || ''}" 
+                                   data-month="${monthNum}" 
+                                   data-field="peak"
+                                   onchange="updateData()"
+                                   min="0" step="0.1" placeholder="尖峰">
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   value="${data.offPeak || ''}" 
+                                   data-month="${monthNum}" 
+                                   data-field="offPeak"
+                                   onchange="updateData()"
+                                   min="0" step="0.1" placeholder="離峰">
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   value="${data.total || ''}" 
+                                   data-month="${monthNum}" 
+                                   data-field="total"
+                                   onchange="updateData()"
+                                   min="0" step="0.1" placeholder="總用電">
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   value="${data.cost || ''}" 
+                                   data-month="${monthNum}" 
+                                   data-field="cost"
+                                   onchange="updateData()"
+                                   min="0" step="0.01" placeholder="電費">
+                        </td>
+                        <td>
+                            <input type="number" 
+                                   value="${data.price || ''}" 
+                                   data-month="${monthNum}" 
+                                   data-field="price"
+                                   onchange="updateData()"
+                                   min="0" step="0.01" placeholder="單價">
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 更新數據
+        function updateData() {
+            const inputs = document.querySelectorAll('.data-table input');
+            inputs.forEach(input => {
+                const month = input.dataset.month;
+                const field = input.dataset.field;
+                const value = parseFloat(input.value) || 0;
+
+                if (!monthlyData[month]) monthlyData[month] = {};
+                monthlyData[month][field] = value;
+            });
+
+            saveData();
+        }
+
+        // 自動計算總用電和單價
+        function calculateAll() {
+            updateData();
+
+            // 自動填充空值
+            Object.keys(monthlyData).forEach(month => {
+                const data = monthlyData[month];
+                
+                // 計算總用電
+                if ((!data.total || data.total === 0) && data.peak && data.offPeak) {
+                    data.total = data.peak + data.offPeak;
+                }
+                
+                // 計算單價
+                if ((!data.price || data.price === 0) && data.cost && data.total) {
+                    data.price = (data.cost / data.total).toFixed(2);
+                }
+            });
+
+            // 更新表格
+            initializeTable();
+
+            // 更新統計
+            updateStatistics();
+            updateCharts();
+        }
+
+        // 更新統計
+        function updateStatistics() {
+            let annualPower = 0, annualCost = 0, annualCarbon = 0;
+            let maxPower = 0, minPower = Infinity;
+            const coef = parseFloat(document.getElementById('carbon-coef').value) || 0.5;
+
+            Object.values(monthlyData).forEach(data => {
+                const power = data.total || 0;
+                const cost = data.cost || 0;
+                const carbon = power * coef;
+
+                annualPower += power;
+                annualCost += cost;
+                annualCarbon += carbon;
+                maxPower = Math.max(maxPower, power);
+                minPower = Math.min(minPower, power);
+            });
+
+            minPower = minPower === Infinity ? 0 : minPower;
+
+            const avgPower = annualPower / 12;
+            const avgCost = annualCost / 12;
+            const avgPrice = annualPower > 0 ? (annualCost / annualPower).toFixed(2) : 0;
+            const avgCarbon = annualCarbon / 12;
+
+            // 更新左側邊欄
+            document.getElementById('annual-power').textContent = annualPower.toFixed(0);
+            document.getElementById('avg-power').textContent = avgPower.toFixed(0);
+            document.getElementById('annual-cost').textContent = annualCost.toFixed(0);
+            document.getElementById('avg-price').textContent = avgPrice;
+            document.getElementById('annual-carbon').textContent = annualCarbon.toFixed(0);
+            document.getElementById('avg-carbon').textContent = avgCarbon.toFixed(0);
+
+            // 環保當量
+            const treeCount = Math.round(annualCarbon / 20);
+            const carKm = Math.round(annualCarbon / 0.25);
+            document.getElementById('tree-count').textContent = treeCount;
+            document.getElementById('car-km').textContent = carKm;
+
+            // 更新碳排對比標籤
+            document.getElementById('comp-actual-carbon').textContent = annualCarbon.toFixed(0);
+            document.getElementById('comp-grid-coef').textContent = coef.toFixed(2);
+            document.getElementById('comp-annual-carbon').textContent = annualCarbon.toFixed(0);
+
+            // 環保當量詳細
+            document.getElementById('equiv-trees').textContent = treeCount;
+            document.getElementById('equiv-car-km').textContent = carKm;
+
+            // 詳細統計表
+            document.getElementById('stat-total-power').textContent = annualPower.toFixed(0) + ' kWh';
+            document.getElementById('stat-avg-power').textContent = avgPower.toFixed(0) + ' kWh';
+            document.getElementById('stat-max-power').textContent = maxPower.toFixed(0) + ' kWh';
+            document.getElementById('stat-min-power').textContent = minPower.toFixed(0) + ' kWh';
+            document.getElementById('stat-total-cost').textContent = annualCost.toFixed(0) + ' 元';
+            document.getElementById('stat-avg-cost').textContent = avgCost.toFixed(0) + ' 元';
+            document.getElementById('stat-avg-price').textContent = avgPrice + ' 元/kWh';
+
+            // 尖離峰比例
+            let peakTotal = 0, offPeakTotal = 0;
+            Object.values(monthlyData).forEach(data => {
+                peakTotal += data.peak || 0;
+                offPeakTotal += data.offPeak || 0;
+            });
+            const peakRatio = (peakTotal + offPeakTotal) > 0 
+                ? ((peakTotal / (peakTotal + offPeakTotal)) * 100).toFixed(1) 
+                : 0;
+            document.getElementById('stat-peak-ratio').textContent = peakRatio + '%';
+
+            // 生成建議
+            generateSuggestions(maxPower, avgPower, peakRatio);
+        }
+
+        // 生成建議
+        function generateSuggestions(maxPower, avgPower, peakRatio) {
+            const suggestions = [];
+
+            if (maxPower > avgPower * 1.5) {
+                suggestions.push('📌 用電波動較大，建議平衡日常用電時段');
+            }
+            if (peakRatio > 40) {
+                suggestions.push('📌 尖峰用電占比 ' + peakRatio + '%，建議移轉部分用電至離峰時段');
+            }
+            if (avgPower > 500) {
+                suggestions.push('📌 月均用電量較高，建議安裝可再生能源設備');
+            }
+            suggestions.push('📌 每月定期檢查電費帳單，及早發現異常用電');
+
+            document.getElementById('suggestions').innerHTML = suggestions
+                .map(s => `<div style="margin-bottom: 8px;">${s}</div>`)
+                .join('');
+        }
+
+        // 更新圖表
+        function updateCharts() {
+            const powerChart = document.getElementById('power-chart');
+            const costChart = document.getElementById('cost-chart');
+            const carbonChart = document.getElementById('carbon-chart');
+            const coef = parseFloat(document.getElementById('carbon-coef').value) || 0.5;
+
+            let maxPower = 0, maxCost = 0, maxCarbon = 0;
+
+            // 找最大值
+            months.forEach((month, i) => {
+                const monthNum = String(i + 1).padStart(2, '0');
+                const data = monthlyData[monthNum] || {};
+                const power = data.total || 0;
+                const cost = data.cost || 0;
+                const carbon = power * coef;
+
+                maxPower = Math.max(maxPower, power);
+                maxCost = Math.max(maxCost, cost);
+                maxCarbon = Math.max(maxCarbon, carbon);
+            });
+
+            // 生成圖表
+            powerChart.innerHTML = months.map((month, i) => {
+                const monthNum = String(i + 1).padStart(2, '0');
+                const data = monthlyData[monthNum] || {};
+                const power = data.total || 0;
+                const height = maxPower > 0 ? (power / maxPower) * 100 : 0;
+
+                return `
+                    <div class="bar">
+                        <div class="bar-fill" style="height: ${height}%;"></div>
+                        <div class="bar-label">${month}</div>
+                        <div class="bar-value">${power.toFixed(0)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            costChart.innerHTML = months.map((month, i) => {
+                const monthNum = String(i + 1).padStart(2, '0');
+                const data = monthlyData[monthNum] || {};
+                const cost = data.cost || 0;
+                const height = maxCost > 0 ? (cost / maxCost) * 100 : 0;
+
+                return `
+                    <div class="bar">
+                        <div class="bar-fill" style="height: ${height}%;"></div>
+                        <div class="bar-label">${month}</div>
+                        <div class="bar-value">${cost.toFixed(0)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            carbonChart.innerHTML = months.map((month, i) => {
+                const monthNum = String(i + 1).padStart(2, '0');
+                const data = monthlyData[monthNum] || {};
+                const power = data.total || 0;
+                const carbon = power * coef;
+                const height = maxCarbon > 0 ? (carbon / maxCarbon) * 100 : 0;
+
+                return `
+                    <div class="bar">
+                        <div class="bar-fill" style="height: ${height}%; background: linear-gradient(180deg, #f97316, #fb923c);"></div>
+                        <div class="bar-label">${month}</div>
+                        <div class="bar-value">${carbon.toFixed(0)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 保存數據
+        function saveData() {
+            localStorage.setItem('monthlyElectricityData', JSON.stringify(monthlyData));
+        }
+
+        // 載入數據
+        function loadData() {
+            monthlyData = JSON.parse(localStorage.getItem('monthlyElectricityData')) || {};
+        }
+
+        // 標籤頁切換
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 導出數據
+        function exportData() {
+            const dataStr = JSON.stringify(monthlyData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'electricity-data-' + new Date().getTime() + '.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

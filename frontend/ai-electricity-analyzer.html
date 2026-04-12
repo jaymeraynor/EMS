@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 用電自動分析 - 智能優化建議系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 50%, #e0f2fe 100%);
+            color: #333;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a365d 100%);
+            color: #ffffff;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        body.dark .navbar {
+            background: rgba(30, 41, 59, 0.95);
+            border-bottom-color: #475569;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #8b5cf6, #d946ef);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .btn-toggle:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark .btn-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .container {
+            margin-top: 70px;
+            padding: 24px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 輸入卡片 */
+        .input-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        body.dark .input-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        body.dark .form-label {
+            color: #aaa;
+        }
+
+        .form-input {
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        body.dark .form-input {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+
+        /* 按鈕 */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #8b5cf6, #d946ef);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        /* AI 分析結果卡片 */
+        .analysis-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        body.dark .analysis-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 評分卡片 */
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .score-box {
+            padding: 16px;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+        }
+
+        body.dark .score-box {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-color: #475569;
+        }
+
+        .score-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        body.dark .score-label {
+            color: #aaa;
+        }
+
+        .score-value {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #8b5cf6, #d946ef);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-unit {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        body.dark .score-unit {
+            color: #aaa;
+        }
+
+        /* 建議列表 */
+        .recommendations {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .recommendation-item {
+            padding: 16px;
+            background: #f9fafb;
+            border-left: 4px solid;
+            border-radius: 8px;
+            display: flex;
+            gap: 12px;
+        }
+
+        body.dark .recommendation-item {
+            background: #334155;
+        }
+
+        .recommendation-item.critical {
+            border-left-color: #ef4444;
+            background: #fee2e2;
+        }
+
+        body.dark .recommendation-item.critical {
+            background: #7f1d1d;
+        }
+
+        .recommendation-item.warning {
+            border-left-color: #f97316;
+            background: #fed7aa;
+        }
+
+        body.dark .recommendation-item.warning {
+            background: #78350f;
+        }
+
+        .recommendation-item.success {
+            border-left-color: #10b981;
+            background: #d1fae5;
+        }
+
+        body.dark .recommendation-item.success {
+            background: #064e3b;
+        }
+
+        .recommendation-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .recommendation-content {
+            flex: 1;
+        }
+
+        .recommendation-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .recommendation-desc {
+            font-size: 12px;
+            color: #666;
+        }
+
+        body.dark .recommendation-desc {
+            color: #aaa;
+        }
+
+        .recommendation-impact {
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 4px;
+            color: #8b5cf6;
+        }
+
+        /* 圖表 */
+        .chart-container {
+            margin-top: 16px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 200px;
+            margin-top: 12px;
+        }
+
+        .bar {
+            flex: 1;
+            background: linear-gradient(180deg, #8b5cf6, #d946ef);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            min-height: 20px;
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: bold;
+            color: #666;
+        }
+
+        body.dark .bar-label {
+            color: #aaa;
+        }
+
+        /* 表格 */
+        .analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 16px;
+        }
+
+        .analysis-table th,
+        .analysis-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        body.dark .analysis-table td {
+            border-bottom-color: #475569;
+        }
+
+        .analysis-table th {
+            background: #f9fafb;
+            font-weight: bold;
+        }
+
+        body.dark .analysis-table th {
+            background: #334155;
+        }
+
+        /* 訊息框 */
+        .info-box {
+            padding: 16px;
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #1e40af;
+            margin-bottom: 16px;
+        }
+
+        body.dark .info-box {
+            background: #1e3a8a;
+            color: #93c5fd;
+        }
+
+        /* 標籤頁 */
+        .tab-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        body.dark .tab-buttons {
+            border-bottom-color: #475569;
+        }
+
+        .tab-btn {
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        body.dark .tab-btn {
+            color: #aaa;
+        }
+
+        .tab-btn.active {
+            color: #8b5cf6;
+            border-bottom-color: #8b5cf6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 摘要 */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-box {
+            padding: 20px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+        }
+
+        body.dark .summary-box {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        body.dark .summary-label {
+            color: #aaa;
+        }
+
+        .summary-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8b5cf6;
+        }
+
+        .summary-unit {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        body.dark .summary-unit {
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="navbar">
+        <div class="logo">
+            <div class="logo-icon">🤖</div>
+            <span>AI 用電自動分析 - 智能優化系統</span>
+        </div>
+        <div class="nav-controls">
+            <button class="btn-toggle" onclick="toggleDarkMode()">
+                <span id="theme-toggle">🌙</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 輸入數據部分 -->
+        <div class="section">
+            <div class="section-title">📊 輸入年度用電數據</div>
+            <div class="input-card">
+                <div class="info-box">
+                    💡 請輸入過去 12 個月的用電數據，AI 將自動分析並提供優化建議
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">契約容量 (kW)</label>
+                        <input type="number" id="capacity" class="form-input" value="50" min="1" step="0.1" placeholder="例：50">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">年度用電量 (kWh)</label>
+                        <input type="number" id="annual-power" class="form-input" value="19200" min="0" step="1" placeholder="例：19200">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">最高月用電 (kWh)</label>
+                        <input type="number" id="max-power" class="form-input" value="1800" min="0" step="1" placeholder="例：1800">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">最低月用電 (kWh)</label>
+                        <input type="number" id="min-power" class="form-input" value="1400" min="0" step="1" placeholder="例：1400">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">年度電費 (元)</label>
+                        <input type="number" id="annual-cost" class="form-input" value="49680" min="0" step="1" placeholder="例：49680">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">尖峰占比 (%)</label>
+                        <input type="number" id="peak-ratio" class="form-input" value="70" min="0" max="100" step="1" placeholder="例：70">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="analyzeUsage()">
+                    🔍 開始 AI 分析
+                </button>
+            </div>
+        </div>
+
+        <!-- 標籤頁 -->
+        <div class="section">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('overview')">📈 分析概覽</button>
+                <button class="tab-btn" onclick="switchTab('recommendations')">💡 優化建議</button>
+                <button class="tab-btn" onclick="switchTab('details')">📊 詳細數據</button>
+            </div>
+
+            <!-- 概覽標籤 -->
+            <div id="overview" class="tab-content active">
+                <!-- AI 評分 -->
+                <div class="section">
+                    <div class="section-title">🎯 AI 智能評分</div>
+                    
+                    <div class="score-grid">
+                        <div class="score-box">
+                            <div class="score-label">用電健康度</div>
+                            <div class="score-value" id="health-score">--</div>
+                            <div class="score-unit">/ 100</div>
+                        </div>
+                        <div class="score-box">
+                            <div class="score-label">成本優化空間</div>
+                            <div class="score-value" id="savings-potential">--</div>
+                            <div class="score-unit">%</div>
+                        </div>
+                        <div class="score-box">
+                            <div class="score-label">契約容量利用率</div>
+                            <div class="score-value" id="capacity-usage">--</div>
+                            <div class="score-unit">%</div>
+                        </div>
+                        <div class="score-box">
+                            <div class="score-label">能源效率評級</div>
+                            <div class="score-value" id="efficiency-grade">--</div>
+                            <div class="score-unit"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 摘要 -->
+                <div class="section">
+                    <div class="section-title">📋 關鍵指標摘要</div>
+                    
+                    <div class="summary-grid">
+                        <div class="summary-box">
+                            <div class="summary-label">年度節省潛力</div>
+                            <div class="summary-value" id="annual-savings">--</div>
+                            <div class="summary-unit">元/年</div>
+                        </div>
+                        <div class="summary-box">
+                            <div class="summary-label">推薦契約容量</div>
+                            <div class="summary-value" id="recommended-capacity">--</div>
+                            <div class="summary-unit">kW</div>
+                        </div>
+                        <div class="summary-box">
+                            <div class="summary-label">尖離峰優化空間</div>
+                            <div class="summary-value" id="peak-optimization">--</div>
+                            <div class="summary-unit">元/年</div>
+                        </div>
+                        <div class="summary-box">
+                            <div class="summary-label">用電穩定性</div>
+                            <div class="summary-value" id="stability-score">--</div>
+                            <div class="summary-unit">分</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用電狀態分析 -->
+                <div class="section">
+                    <div class="section-title">🔍 用電狀態分析</div>
+                    <div class="analysis-card">
+                        <div id="status-analysis" style="font-size: 14px; line-height: 1.8;">
+                            <!-- 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 優化建議標籤 -->
+            <div id="recommendations" class="tab-content">
+                <div class="section">
+                    <div class="section-title">💡 AI 優化建議</div>
+                    <div class="recommendations" id="recommendations-list">
+                        <!-- 動態生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 詳細數據標籤 -->
+            <div id="details" class="tab-content">
+                <div class="section">
+                    <div class="section-title">📊 詳細分析數據</div>
+                    <div class="analysis-card">
+                        <table class="analysis-table">
+                            <thead>
+                                <tr>
+                                    <th>分析指標</th>
+                                    <th>當前值</th>
+                                    <th>理想值</th>
+                                    <th>評價</th>
+                                </tr>
+                            </thead>
+                            <tbody id="details-table">
+                                <!-- 動態生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📈 用電波動分析</div>
+                    <div class="analysis-card">
+                        <div class="chart-title">月度用電變化</div>
+                        <div class="bar-chart" id="volatility-chart">
+                            <!-- 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI 智能建議模式 -->
+        <div class="section">
+            <div class="section-title">🧠 AI 智能模式分析</div>
+            <div class="analysis-card">
+                <div id="ai-insights">
+                    <!-- 動態生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+        });
+
+        // 深浚模式
+        function initDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark');
+                document.getElementById('theme-toggle').textContent = '☀️';
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // 主分析函數
+        function analyzeUsage() {
+            // 獲取輸入數據
+            const capacity = parseFloat(document.getElementById('capacity').value) || 50;
+            const annualPower = parseFloat(document.getElementById('annual-power').value) || 19200;
+            const maxPower = parseFloat(document.getElementById('max-power').value) || 1800;
+            const minPower = parseFloat(document.getElementById('min-power').value) || 1400;
+            const annualCost = parseFloat(document.getElementById('annual-cost').value) || 49680;
+            const peakRatio = parseFloat(document.getElementById('peak-ratio').value) || 70;
+
+            // 計算關鍵指標
+            const analysis = calculateAnalysis(
+                capacity, annualPower, maxPower, minPower, annualCost, peakRatio
+            );
+
+            // 更新 UI
+            updateUI(analysis);
+
+            // 生成建議
+            generateRecommendations(analysis);
+
+            // 生成詳細數據
+            generateDetailsTable(analysis);
+
+            // 生成 AI 洞察
+            generateAIInsights(analysis);
+        }
+
+        // 核心分析引擎
+        function calculateAnalysis(capacity, annualPower, maxPower, minPower, annualCost, peakRatio) {
+            const avgPower = annualPower / 12;
+            const avgPrice = annualCost / annualPower;
+            
+            // 1. 契約容量利用率
+            const capacityUsageRate = (maxPower / (capacity * 24)) * 100;
+            
+            // 2. 用電穩定性（標準差）
+            const volatility = ((maxPower - minPower) / avgPower) * 100;
+            const stabilityScore = Math.max(0, 100 - volatility);
+            
+            // 3. 健康度評分
+            let healthScore = 100;
+            if (capacityUsageRate > 85) healthScore -= 15; // 容量利用率過高
+            if (volatility > 40) healthScore -= 10; // 用電波動過大
+            if (peakRatio > 75) healthScore -= 10; // 尖峰比例過高
+            if (capacityUsageRate < 30) healthScore -= 5; // 容量利用率太低
+            healthScore = Math.max(0, healthScore);
+            
+            // 4. 成本優化空間
+            let savingsPotential = 0;
+            if (capacityUsageRate < 50) savingsPotential += 10; // 考慮降低契約容量
+            if (peakRatio > 65) savingsPotential += 8; // 尖離峰最優化
+            if (volatility > 35) savingsPotential += 5; // 平衡用電
+            savingsPotential = Math.min(25, savingsPotential);
+            
+            // 5. 推薦契約容量
+            const recommendedCapacity = Math.ceil((maxPower / 24) * 1.2);
+            
+            // 6. 年度節省潛力（元）
+            const annualSavings = Math.round(annualCost * (savingsPotential / 100));
+            
+            // 7. 尖離峰優化空間（假設可節省 8-12%）
+            const peakOptimizationSavings = Math.round(annualCost * 0.10 * (peakRatio > 65 ? 1 : 0.5));
+            
+            // 8. 能源效率等級
+            let efficiencyGrade = 'A+';
+            if (healthScore < 85) efficiencyGrade = 'A';
+            if (healthScore < 75) efficiencyGrade = 'B+';
+            if (healthScore < 65) efficiencyGrade = 'B';
+            if (healthScore < 50) efficiencyGrade = 'C+';
+            if (healthScore < 40) efficiencyGrade = 'C';
+            
+            return {
+                capacity,
+                annualPower,
+                maxPower,
+                minPower,
+                avgPower,
+                annualCost,
+                avgPrice,
+                peakRatio,
+                volatility,
+                capacityUsageRate,
+                stabilityScore,
+                healthScore,
+                savingsPotential,
+                recommendedCapacity,
+                annualSavings,
+                peakOptimizationSavings,
+                efficiencyGrade
+            };
+        }
+
+        // 更新 UI
+        function updateUI(analysis) {
+            // 評分
+            document.getElementById('health-score').textContent = analysis.healthScore.toFixed(0);
+            document.getElementById('savings-potential').textContent = analysis.savingsPotential.toFixed(1);
+            document.getElementById('capacity-usage').textContent = analysis.capacityUsageRate.toFixed(1);
+            document.getElementById('efficiency-grade').textContent = analysis.efficiencyGrade;
+
+            // 摘要
+            document.getElementById('annual-savings').textContent = analysis.annualSavings.toLocaleString();
+            document.getElementById('recommended-capacity').textContent = analysis.recommendedCapacity.toFixed(1);
+            document.getElementById('peak-optimization').textContent = analysis.peakOptimizationSavings.toLocaleString();
+            document.getElementById('stability-score').textContent = analysis.stabilityScore.toFixed(0);
+
+            // 用電狀態分析
+            generateStatusAnalysis(analysis);
+        }
+
+        // 生成用電狀態分析
+        function generateStatusAnalysis(analysis) {
+            const container = document.getElementById('status-analysis');
+            
+            let status = '';
+            
+            if (analysis.capacityUsageRate > 85) {
+                status += `<p>⚠️ <strong>契約容量利用率過高</strong>（${analysis.capacityUsageRate.toFixed(1)}%）</p>`;
+                status += `<p>您的最高用電接近契約容量上限，建議考慮提升契約容量以避免超約罰款。</p>`;
+            } else if (analysis.capacityUsageRate < 30) {
+                status += `<p>✅ <strong>契約容量利用率偏低</strong>（${analysis.capacityUsageRate.toFixed(1)}%）</p>`;
+                status += `<p>您的實際用電遠低於契約容量，可考慮降低契約容量以節省基本費用。</p>`;
+            } else {
+                status += `<p>✅ <strong>契約容量利用率合理</strong>（${analysis.capacityUsageRate.toFixed(1)}%）</p>`;
+                status += `<p>您的契約容量設置恰當，滿足實際用電需求。</p>`;
+            }
+            
+            if (analysis.volatility > 40) {
+                status += `<p><br>⚠️ <strong>用電波動較大</strong>（波動率：${analysis.volatility.toFixed(1)}%）</p>`;
+                status += `<p>您的月度用電量變化明顯，可能與季節或生產計劃有關。建議平衡用電以提高穩定性。</p>`;
+            } else if (analysis.volatility < 20) {
+                status += `<p><br>✅ <strong>用電波動小、穩定性好</strong>（波動率：${analysis.volatility.toFixed(1)}%）</p>`;
+                status += `<p>您的用電相對穩定，便於電力公司調度和成本預測。</p>`;
+            } else {
+                status += `<p><br>✅ <strong>用電波動正常</strong>（波動率：${analysis.volatility.toFixed(1)}%）</p>`;
+                status += `<p>您的用電波動在正常範圍內。</p>`;
+            }
+            
+            if (analysis.peakRatio > 75) {
+                status += `<p><br>⚠️ <strong>尖峰用電占比過高</strong>（尖峰占比：${analysis.peakRatio.toFixed(0)}%）</p>`;
+                status += `<p>您的高費用時段用電過多，移轉部分用電至離峰時段可節省 8-15% 電費。</p>`;
+            } else if (analysis.peakRatio < 50) {
+                status += `<p><br>✅ <strong>尖離峰搭配均衡</strong>（尖峰占比：${analysis.peakRatio.toFixed(0)}%）</p>`;
+                status += `<p>您的尖離峰比例優化得很好，已充分利用離峰低價時段。</p>`;
+            } else {
+                status += `<p><br>✅ <strong>尖離峰比例適中</strong>（尖峰占比：${analysis.peakRatio.toFixed(0)}%）</p>`;
+                status += `<p>您的尖離峰搭配合理，成本相對優化。</p>`;
+            }
+            
+            container.innerHTML = status;
+        }
+
+        // 生成優化建議
+        function generateRecommendations(analysis) {
+            const container = document.getElementById('recommendations-list');
+            const recommendations = [];
+            
+            // 建議 1：契約容量優化
+            if (analysis.capacityUsageRate > 80) {
+                recommendations.push({
+                    type: 'critical',
+                    icon: '🚨',
+                    title: '【優先】提升契約容量',
+                    desc: `目前容量利用率為 ${analysis.capacityUsageRate.toFixed(1)}%，接近上限。一旦超約可能面臨 1.5 倍罰款。`,
+                    impact: `預期降低罰款風險，成本增加約 ${(analysis.recommendedCapacity - analysis.capacity) * 300}.0 元/月`
+                });
+            } else if (analysis.capacityUsageRate < 40) {
+                recommendations.push({
+                    type: 'success',
+                    icon: '✅',
+                    title: '【成本節省】降低契約容量',
+                    desc: `推薦從 ${analysis.capacity} kW 降至 ${analysis.recommendedCapacity} kW。您的實際最高需求僅 ${analysis.maxPower.toFixed(0)} kWh/月。`,
+                    impact: `年度節省基本費用約 ${(analysis.capacity - analysis.recommendedCapacity) * 300 * 12} 元`
+                });
+            }
+            
+            // 建議 2：尖離峰優化
+            if (analysis.peakRatio > 70) {
+                recommendations.push({
+                    type: 'warning',
+                    icon: '⚡',
+                    title: '【高收益】移轉尖峰用電至離峰',
+                    desc: `尖峰占比高達 ${analysis.peakRatio.toFixed(0)}%，建議將 10-20% 的用電移至離峰時段（22:00-08:00）。`,
+                    impact: `年度節省電費約 ${analysis.peakOptimizationSavings} 元（節省 8-12%）`
+                });
+            }
+            
+            // 建議 3：用電穩定性
+            if (analysis.volatility > 35) {
+                recommendations.push({
+                    type: 'warning',
+                    icon: '📊',
+                    title: '【優化】平衡月度用電',
+                    desc: `用電波動 ${analysis.volatility.toFixed(0)}% 過大（最高 ${analysis.maxPower.toFixed(0)} kWh，最低 ${analysis.minPower.toFixed(0)} kWh）。`,
+                    impact: `通過錯峰排程，預期降低峰值需求，進而優化契約容量`
+                });
+            }
+            
+            // 建議 4：能源管理系統
+            if (analysis.healthScore < 75) {
+                recommendations.push({
+                    type: 'warning',
+                    icon: '🔌',
+                    title: '【長期】安裝能源管理系統',
+                    desc: `您的用電健康度為 ${analysis.healthScore.toFixed(0)} 分，需要更好的用電控制和監測。`,
+                    impact: `投資 20-50 萬元，3-5 年回本，年度節省 10-20%`
+                });
+            } else {
+                recommendations.push({
+                    type: 'success',
+                    icon: '✅',
+                    title: '【維持】能源管理水平良好',
+                    desc: `您的用電管理已達到 ${analysis.efficiencyGrade} 級水平，繼續保持當前做法。`,
+                    impact: `年度節省潛力已充分發揮`
+                });
+            }
+            
+            // 建議 5：可再生能源
+            if (analysis.annualCost > 40000) {
+                recommendations.push({
+                    type: 'warning',
+                    icon: '☀️',
+                    title: '【投資機會】考慮太陽能光伏',
+                    desc: `年度電費 ${analysis.annualCost.toLocaleString()} 元，可考慮安裝 10-20 kW 太陽能減少 20-30% 用電。`,
+                    impact: `投資成本 30-60 萬元，5-8 年回本，年度節省 15,000-20,000 元`
+                });
+            }
+            
+            // 建議 6：定期監測
+            recommendations.push({
+                type: 'success',
+                icon: '📈',
+                title: '【持續改進】建立監測機制',
+                desc: `建議每月檢查電費帳單，與過去同期對比，及早發現異常用電。`,
+                impact: `及時發現問題，預防潛在成本增加`
+            });
+            
+            container.innerHTML = recommendations.map(r => `
+                <div class="recommendation-item ${r.type}">
+                    <div class="recommendation-icon">${r.icon}</div>
+                    <div class="recommendation-content">
+                        <div class="recommendation-title">${r.title}</div>
+                        <div class="recommendation-desc">${r.desc}</div>
+                        <div class="recommendation-impact">💰 影響：${r.impact}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 生成詳細數據表
+        function generateDetailsTable(analysis) {
+            const tbody = document.getElementById('details-table');
+            const details = [
+                {
+                    metric: '契約容量利用率',
+                    current: analysis.capacityUsageRate.toFixed(1) + '%',
+                    ideal: '50-80%',
+                    status: analysis.capacityUsageRate < 40 || analysis.capacityUsageRate > 85 ? '❌ 需優化' : '✅ 正常'
+                },
+                {
+                    metric: '用電波動率',
+                    current: analysis.volatility.toFixed(1) + '%',
+                    ideal: '< 30%',
+                    status: analysis.volatility > 40 ? '❌ 需優化' : '✅ 正常'
+                },
+                {
+                    metric: '平均月用電',
+                    current: analysis.avgPower.toFixed(0) + ' kWh',
+                    ideal: `${(analysis.minPower + (analysis.maxPower - analysis.minPower) / 2).toFixed(0)} kWh`,
+                    status: '📊 監測'
+                },
+                {
+                    metric: '平均電價',
+                    current: analysis.avgPrice.toFixed(2) + ' 元/kWh',
+                    ideal: '行業平均 2.5-3.0',
+                    status: analysis.avgPrice < 2.5 ? '✅ 低於平均' : '📊 監測'
+                },
+                {
+                    metric: '尖峰占比',
+                    current: analysis.peakRatio.toFixed(0) + '%',
+                    ideal: '50-70%',
+                    status: analysis.peakRatio > 75 ? '⚠️ 偏高' : '✅ 正常'
+                },
+                {
+                    metric: '用電穩定性',
+                    current: analysis.stabilityScore.toFixed(0) + ' 分',
+                    ideal: '> 80 分',
+                    status: analysis.stabilityScore > 80 ? '✅ 穩定' : '⚠️ 需改善'
+                }
+            ];
+            
+            tbody.innerHTML = details.map(d => `
+                <tr>
+                    <td>${d.metric}</td>
+                    <td><strong>${d.current}</strong></td>
+                    <td>${d.ideal}</td>
+                    <td>${d.status}</td>
+                </tr>
+            `).join('');
+        }
+
+        // 生成 AI 洞察
+        function generateAIInsights(analysis) {
+            const container = document.getElementById('ai-insights');
+            
+            let insights = '<h3 style="margin-bottom: 16px; font-size: 16px;">🧠 AI 智能洞察</h3>';
+            
+            // 模式識別
+            insights += '<div style="margin-bottom: 20px;"><strong>📍 用電模式識別</strong></div>';
+            
+            if (analysis.volatility > 40) {
+                insights += '<p>🔴 <strong>高波動模式</strong>：您的用電呈現明顯的季節性或週期性波動，可能與生產排程或季節氣溫相關。</p>';
+            } else if (analysis.volatility < 20) {
+                insights += '<p>🟢 <strong>穩定模式</strong>：您的用電非常穩定，便於精準預測和成本控制。</p>';
+            } else {
+                insights += '<p>🟡 <strong>正常波動</strong>：您的用電呈現輕微波動，屬於典型工商業用戶。</p>';
+            }
+            
+            // 契約適配性
+            insights += '<div style="margin-bottom: 20px; margin-top: 16px;"><strong>⚡ 契約適配性評估</strong></div>';
+            
+            if (analysis.capacityUsageRate > 85) {
+                insights += '<p>🔴 <strong>高風險</strong>：當前契約容量可能不足，存在超約罰款風險。</p>';
+                insights += '<p>建議：立即提升契約容量至 ' + analysis.recommendedCapacity.toFixed(1) + ' kW。</p>';
+            } else if (analysis.capacityUsageRate < 40) {
+                insights += '<p>🟢 <strong>優化機會</strong>：您有充足的降容空間。</p>';
+                insights += '<p>建議：考慮降至 ' + analysis.recommendedCapacity.toFixed(1) + ' kW，年度節省基本費用。</p>';
+            } else {
+                insights += '<p>🟢 <strong>匹配良好</strong>：契約容量與實際需求相匹配。</p>';
+            }
+            
+            // 成本優化潛力
+            insights += '<div style="margin-bottom: 20px; margin-top: 16px;"><strong>💰 成本優化潛力</strong></div>';
+            insights += `<p>您的年度成本優化空間約為 ${analysis.savingsPotential.toFixed(1)}%（約 ${analysis.annualSavings.toLocaleString()} 元/年）。</p>`;
+            
+            if (analysis.peakRatio > 70) {
+                insights += `<p>其中，尖離峰時段最優化可節省 ${analysis.peakOptimizationSavings.toLocaleString()} 元/年。</p>`;
+            }
+            
+            // AI 評級
+            insights += '<div style="margin-bottom: 20px; margin-top: 16px;"><strong>📊 能源管理評級</strong></div>';
+            insights += `<p>綜合評分：<strong style="font-size: 18px; color: #8b5cf6;">${analysis.efficiencyGrade}</strong> 級</p>`;
+            
+            if (analysis.healthScore >= 85) {
+                insights += '<p>您的能源管理水平已達到行業先進水平，建議繼續維持。</p>';
+            } else if (analysis.healthScore >= 70) {
+                insights += '<p>您的能源管理水平良好，建議實施上述建議進一步優化。</p>';
+            } else {
+                insights += '<p>您的能源管理有明顯改善空間，建議優先實施高收益的建議。</p>';
+            }
+            
+            container.innerHTML = insights;
+        }
+
+        // 標籤頁切換
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

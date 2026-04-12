@@ -1,0 +1,223 @@
+╔══════════════════════════════════════════════════════════════╗
+║         🚀 方案3：文件清單下載 - 5 步快速部署                ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 當前狀態：所有 52+ 個文件已準備在 /mnt/user-data/outputs/
+
+═══════════════════════════════════════════════════════════════
+
+🎯 步驟 1：下載部署腳本（2 分鐘）
+
+在您的本地電腦執行：
+
+方式 A - 如果您可以訪問 /mnt/user-data/outputs/：
+────────────────────────────────────────────────────────
+cp /mnt/user-data/outputs/INSTALL.sh ~/
+chmod +x ~/INSTALL.sh
+bash ~/INSTALL.sh
+
+方式 B - 如果您在本地電腦上：
+────────────────────────────────────────────────────────
+# 直接複製以下內容到您的服務器
+
+mkdir -p /opt/elitegets
+cd /opt/elitegets
+
+# 複製 docker-compose.yml
+cp /mnt/user-data/outputs/docker-compose.yml .
+cp /mnt/user-data/outputs/.env.example .env
+
+# 複製前端文件
+cp /mnt/user-data/outputs/*.html frontend/ 2>/dev/null || true
+cp /mnt/user-data/outputs/universal-protection-system.js frontend/
+cp /mnt/user-data/outputs/developer-debug-mode.js frontend/
+cp /mnt/user-data/outputs/meter-adapter-engine.js frontend/
+cp /mnt/user-data/outputs/color-system.js frontend/
+cp /mnt/user-data/outputs/i18n-language-system.js frontend/
+
+# 複製後端文件
+cp /mnt/user-data/outputs/backend-*.py backend/
+cp /mnt/user-data/outputs/backend-*.ts backend/
+cp /mnt/user-data/outputs/mqtt-bridge.js backend/
+cp /mnt/user-data/outputs/license-protection-system.js backend/
+cp /mnt/user-data/outputs/universal-license-protection.js backend/
+
+═══════════════════════════════════════════════════════════════
+
+🎯 步驟 2：驗證文件（1 分鐘）
+
+執行以下命令確認文件都已複製：
+
+ls -la /opt/elitegets/
+ls -la /opt/elitegets/frontend/ | wc -l
+ls -la /opt/elitegets/backend/ | wc -l
+
+期望結果：
+✅ 前端: 35+ 個文件
+✅ 後端: 7+ 個文件
+✅ 配置: docker-compose.yml, .env
+
+═══════════════════════════════════════════════════════════════
+
+🎯 步驟 3：配置環境變量（2 分鐘）
+
+編輯 .env 文件：
+
+nano /opt/elitegets/.env
+
+修改以下內容（重要！）：
+
+DATABASE_URL=postgresql://user:PASSWORD@db:5432/elitegets
+REDIS_URL=redis://:PASSWORD@redis:6379
+DB_PASSWORD=your_secure_db_password_min_16_chars
+REDIS_PASSWORD=your_secure_redis_password
+JWT_SECRET=your_32_character_secret_key_minimum_32_characters
+GRAFANA_PASSWORD=your_grafana_admin_password
+TZ=Asia/Taipei
+
+保存：按 Ctrl+X，然後 Y，再按 Enter
+
+═══════════════════════════════════════════════════════════════
+
+🎯 步驟 4：啟動部署（5 分鐘）
+
+進入目錄：
+
+cd /opt/elitegets
+
+構建並啟動容器：
+
+docker-compose up -d
+
+等待所有容器啟動（通常 3-5 分鐘）
+
+═══════════════════════════════════════════════════════════════
+
+🎯 步驟 5：驗證部署（2 分鐘）
+
+檢查所有容器：
+
+docker-compose ps
+
+所有容器應顯示 "Up"
+
+測試應用：
+
+curl http://localhost/
+
+訪問應用（在瀏覽器中）：
+
+http://localhost/          ← 前端應用
+http://localhost:8000/docs ← API 文檔
+http://localhost:3000      ← Grafana (admin/password)
+http://localhost:9090      ← Prometheus
+
+═══════════════════════════════════════════════════════════════
+
+📊 完整檔案清單
+
+根目錄文件（3 個）：
+✅ docker-compose.yml      - Docker 編排配置
+✅ .env.example           - 環境變量模板
+✅ .env                   - 實際配置（已編輯）
+
+前端文件（35 個）：
+✅ 5 個 JavaScript 核心系統
+✅ 4 個版本管理 HTML
+✅ 5 個功能模塊 HTML
+✅ 3 個儀表板 HTML
+✅ 15+ 個其他 HTML
+
+後端文件（7 個）：
+✅ 2 個 API 服務（Python + Node.js）
+✅ 2 個機器學習和集成服務
+✅ 1 個 MQTT 橋接
+✅ 2 個許可證和保護系統
+
+═══════════════════════════════════════════════════════════════
+
+🆘 故障排查
+
+如果容器無法啟動：
+────────────────────────────────────────────────────────
+docker-compose logs
+docker-compose logs backend
+docker-compose logs frontend
+
+如果端口被占用：
+────────────────────────────────────────────────────────
+# 修改 docker-compose.yml 中的端口
+nano docker-compose.yml
+# 修改 "80:80" 為 "8080:80"
+docker-compose restart
+
+如果文件缺失：
+────────────────────────────────────────────────────────
+# 檢查文件
+find /opt/elitegets -type f | wc -l
+
+# 重新複製（如果需要）
+cp /mnt/user-data/outputs/* /opt/elitegets/
+
+═══════════════════════════════════════════════════════════════
+
+✨ 常用命令
+
+查看日誌：
+────────────────────────────────────────────────────────
+docker-compose logs -f
+
+停止服務：
+────────────────────────────────────────────────────────
+docker-compose down
+
+重啟服務：
+────────────────────────────────────────────────────────
+docker-compose restart
+
+查看容器進程：
+────────────────────────────────────────────────────────
+docker-compose ps
+
+進入容器終端：
+────────────────────────────────────────────────────────
+docker-compose exec backend bash
+
+═══════════════════════════════════════════════════════════════
+
+🎯 成功標誌
+
+✅ 所有容器都在運行（docker-compose ps）
+✅ 前端頁面可訪問（http://localhost/）
+✅ API 可用（http://localhost:8000/docs）
+✅ 日誌沒有錯誤（docker-compose logs）
+✅ 數據庫已連接（查看 docker-compose logs backend）
+
+═══════════════════════════════════════════════════════════════
+
+📞 需要幫助？
+
+1. 查看文檔：
+   cat /opt/elitegets/docs/QUICK-START-DEPLOYMENT.md
+
+2. 檢查日誌：
+   docker-compose logs -f
+
+3. 驗證文件：
+   ls -la /opt/elitegets/
+
+4. 重新部署：
+   docker-compose down
+   docker-compose up -d
+
+═══════════════════════════════════════════════════════════════
+
+🎉 現在開始部署吧！
+
+第1步：複製文件
+第2步：驗證文件
+第3步：配置 .env
+第4步：docker-compose up -d
+第5步：訪問 http://localhost/
+
+═══════════════════════════════════════════════════════════════

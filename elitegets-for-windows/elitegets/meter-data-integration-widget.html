@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>電表數據接入小套件</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #4FC3F7;
+            --color-secondary: #9E8B7B;
+            --color-accent: #CDDC39;
+            --color-dark: #1a1a1a;
+            --color-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f5f5f5;
+            color: var(--color-dark);
+        }
+
+        body.dark {
+            background: #0f1419;
+            color: var(--color-white);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 3px solid var(--color-primary);
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .widget-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .widget-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        body.dark .widget-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .widget-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: var(--color-primary);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: var(--color-dark);
+        }
+
+        body.dark .form-label {
+            color: var(--color-white);
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 12px;
+            font-family: inherit;
+            background: white;
+            color: var(--color-dark);
+        }
+
+        body.dark .form-input,
+        body.dark .form-select {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .protocol-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .protocol-btn {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        body.dark .protocol-btn {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        .protocol-btn.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: #0288D1;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: var(--color-dark);
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        body.dark .btn-secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-connected {
+            background: #4caf50;
+        }
+
+        .status-disconnected {
+            background: #f44336;
+        }
+
+        .status-pending {
+            background: #ff9800;
+        }
+
+        .meter-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            background: #f9f9f9;
+        }
+
+        body.dark .meter-list {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        .meter-item {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        body.dark .meter-item {
+            border-bottom-color: #475569;
+        }
+
+        .meter-item:last-child {
+            border-bottom: none;
+        }
+
+        .meter-info {
+            flex: 1;
+        }
+
+        .meter-name {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .meter-status {
+            font-size: 10px;
+            color: #666;
+        }
+
+        body.dark .meter-status {
+            color: #aaa;
+        }
+
+        .meter-action {
+            display: flex;
+            gap: 4px;
+        }
+
+        .meter-action button {
+            padding: 4px 8px;
+            font-size: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-select {
+            background: var(--color-accent);
+            color: white;
+        }
+
+        .real-time-data {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .data-box {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        body.dark .data-box {
+            background: #334155;
+        }
+
+        .data-label {
+            font-size: 10px;
+            color: #666;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        body.dark .data-label {
+            color: #aaa;
+        }
+
+        .data-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .data-unit {
+            font-size: 9px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        body.dark .modal-content {
+            background: #1e293b;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 12px;
+            border-left: 4px solid var(--color-primary);
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        body.dark .info-box {
+            background: rgba(79, 195, 247, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .widget-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .real-time-data {
+                grid-template-columns: 1fr;
+            }
+
+            .protocol-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span>⚡</span>
+            <h1 class="header-title">電表數據接入小套件</h1>
+        </div>
+
+        <div class="widget-grid">
+            <!-- 電表選擇器 -->
+            <div class="widget-card">
+                <div class="widget-title">🔌 電表選擇</div>
+                
+                <div class="form-group">
+                    <label class="form-label">選擇電表類型</label>
+                    <div class="protocol-options">
+                        <button class="protocol-btn active" onclick="selectMeterType('real')">
+                            📊 真實電表
+                        </button>
+                        <button class="protocol-btn" onclick="selectMeterType('virtual')">
+                            🎮 虛擬電表
+                        </button>
+                    </div>
+                </div>
+
+                <div id="real-meter-section" style="display: block;">
+                    <div class="form-group">
+                        <label class="form-label">通訊協議</label>
+                        <select class="form-select" id="protocol">
+                            <option value="modbus">Modbus RTU/TCP</option>
+                            <option value="mqtt">MQTT</option>
+                            <option value="http">HTTP REST API</option>
+                            <option value="iec60870">IEC 60870-5-104</option>
+                            <option value="dnp3">DNP3</option>
+                            <option value="opc">OPC UA</option>
+                            <option value="custom">自定義協議</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">連接地址</label>
+                        <input type="text" class="form-input" placeholder="192.168.1.100:502" id="connectionAddr">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">電表編號</label>
+                        <input type="text" class="form-input" placeholder="MET-001-A" id="meterId">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">更新頻率</label>
+                        <select class="form-select" id="updateFreq">
+                            <option value="5">5 秒</option>
+                            <option value="10">10 秒</option>
+                            <option value="30">30 秒</option>
+                            <option value="60">1 分鐘</option>
+                            <option value="300">5 分鐘</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="connectMeter()">🔗 連接電表</button>
+                </div>
+
+                <div id="virtual-meter-section" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">虛擬電表編號</label>
+                        <input type="text" class="form-input" placeholder="VIRT-001" id="virtualMeterId">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">基礎功率 (kW)</label>
+                        <input type="number" class="form-input" placeholder="10" id="basePower" value="10" min="1" max="1000">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">波動範圍 (%)</label>
+                        <input type="number" class="form-input" placeholder="20" id="fluctuation" value="20" min="0" max="100">
+                    </div>
+
+                    <button class="btn btn-primary" onclick="createVirtualMeter()">🎮 生成虛擬電表</button>
+                </div>
+            </div>
+
+            <!-- 已接入電表列表 -->
+            <div class="widget-card">
+                <div class="widget-title">📋 已接入電表</div>
+                
+                <div class="info-box">
+                    ✨ 支持多個真實電表和虛擬電表同時運行。可實時切換使用的電表。
+                </div>
+
+                <div class="meter-list" id="meterList">
+                    <div class="meter-item">
+                        <div class="meter-info">
+                            <div class="meter-name">📊 MET-001-A（真實）</div>
+                            <div class="meter-status">
+                                <span class="status-indicator status-connected"></span>
+                                已連接 | Modbus TCP | 10秒更新
+                            </div>
+                        </div>
+                        <div class="meter-action">
+                            <button class="btn-select" onclick="selectActiveMeter('MET-001-A')">選用</button>
+                            <button class="btn-edit" onclick="editMeter('MET-001-A')">編輯</button>
+                            <button class="btn-delete" onclick="deleteMeter('MET-001-A')">刪除</button>
+                        </div>
+                    </div>
+
+                    <div class="meter-item">
+                        <div class="meter-info">
+                            <div class="meter-name">🎮 VIRT-TEST（虛擬）</div>
+                            <div class="meter-status">
+                                <span class="status-indicator status-connected"></span>
+                                已連接 | 虛擬模擬 | 實時更新
+                            </div>
+                        </div>
+                        <div class="meter-action">
+                            <button class="btn-select" onclick="selectActiveMeter('VIRT-TEST')">選用</button>
+                            <button class="btn-edit" onclick="editMeter('VIRT-TEST')">編輯</button>
+                            <button class="btn-delete" onclick="deleteMeter('VIRT-TEST')">刪除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 實時數據顯示 -->
+            <div class="widget-card">
+                <div class="widget-title">⚡ 實時數據</div>
+                
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 12px; font-weight: bold; margin-bottom: 6px;">當前活動電表：MET-001-A</div>
+                    <div style="font-size: 11px; color: #666;">
+                        <span class="status-indicator status-connected"></span>
+                        已連接 | Modbus TCP | 更新於：14:32:45
+                    </div>
+                </div>
+
+                <div class="real-time-data">
+                    <div class="data-box">
+                        <div class="data-label">實時功率</div>
+                        <div class="data-value" id="powerValue">48.5</div>
+                        <div class="data-unit">kW</div>
+                    </div>
+                    <div class="data-box">
+                        <div class="data-label">今日累計</div>
+                        <div class="data-value" id="todayValue">385.2</div>
+                        <div class="data-unit">kWh</div>
+                    </div>
+                    <div class="data-box">
+                        <div class="data-label">當月累計</div>
+                        <div class="data-value" id="monthValue">8,642</div>
+                        <div class="data-unit">kWh</div>
+                    </div>
+                    <div class="data-box">
+                        <div class="data-label">功率因數</div>
+                        <div class="data-value" id="pfValue">0.95</div>
+                        <div class="data-unit">-</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" style="margin-top: 12px;" onclick="refreshData()">🔄 刷新數據</button>
+                <button class="btn btn-secondary" onclick="openDataHistory()">📊 歷史數據</button>
+            </div>
+
+            <!-- 協議配置幫助 -->
+            <div class="widget-card">
+                <div class="widget-title">📖 通訊協議支持</div>
+                
+                <div style="font-size: 12px; line-height: 1.8;">
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: bold; color: var(--color-primary);">Modbus RTU/TCP</div>
+                        <div style="color: #666;">工業電表標準協議，支持 TCP 和串行通訊</div>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: bold; color: var(--color-primary);">MQTT</div>
+                        <div style="color: #666;">物聯網協議，適合云端連接</div>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: bold; color: var(--color-primary);">HTTP REST API</div>
+                        <div style="color: #666;">Web 服務接口，易於集成</div>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: bold; color: var(--color-primary);">其他協議</div>
+                        <div style="color: #666;">IEC 60870、DNP3、OPC UA 等</div>
+                    </div>
+
+                    <button class="btn btn-secondary" onclick="showProtocolDetails()">查看詳細配置</button>
+                </div>
+            </div>
+
+            <!-- 數據導入導出 -->
+            <div class="widget-card">
+                <div class="widget-title">💾 數據管理</div>
+                
+                <button class="btn btn-secondary" onclick="importMeterConfig()">📥 導入配置</button>
+                <button class="btn btn-secondary" onclick="exportMeterData()">📤 導出數據</button>
+                <button class="btn btn-secondary" onclick="backupData()">💾 備份數據</button>
+                <button class="btn btn-secondary" onclick="resetAllData()">🔄 重置所有</button>
+
+                <div style="font-size: 11px; color: #666; margin-top: 12px; line-height: 1.6;">
+                    ✓ 支持 JSON 格式配置導入<br>
+                    ✓ CSV/Excel 數據導出<br>
+                    ✓ 自動備份功能<br>
+                    ✓ 數據加密存儲
+                </div>
+            </div>
+
+            <!-- 故障診斷 -->
+            <div class="widget-card">
+                <div class="widget-title">🔧 故障診斷</div>
+                
+                <button class="btn btn-secondary" onclick="testConnection()">🔗 測試連接</button>
+                <button class="btn btn-secondary" onclick="checkDataFlow()">📊 檢查數據流</button>
+                <button class="btn btn-secondary" onclick="viewLogs()">📋 查看日誌</button>
+                <button class="btn btn-secondary" onclick="diagnostics()">🔍 完整診斷</button>
+
+                <div style="font-size: 11px; color: #666; margin-top: 12px; background: #f9f9f9; padding: 8px; border-radius: 4px; line-height: 1.6;">
+                    <div style="font-weight: bold; margin-bottom: 4px;">最後檢查結果：</div>
+                    ✓ 連接正常<br>
+                    ✓ 數據流暢通<br>
+                    ✓ 無誤報告<br>
+                    🟢 系統運行正常
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模態對話框 -->
+    <div class="modal" id="dataHistoryModal">
+        <div class="modal-content">
+            <div class="modal-title">📊 歷史數據</div>
+            
+            <div class="form-group">
+                <label class="form-label">日期範圍</label>
+                <input type="date" class="form-input" id="startDate">
+                <input type="date" class="form-input" style="margin-top: 8px;" id="endDate">
+            </div>
+
+            <div style="background: #f9f9f9; padding: 12px; border-radius: 8px; font-size: 11px; line-height: 1.6;">
+                <div style="margin-bottom: 8px;"><strong>2024-03-01：</strong> 487.3 kWh</div>
+                <div style="margin-bottom: 8px;"><strong>2024-02-29：</strong> 512.1 kWh</div>
+                <div style="margin-bottom: 8px;"><strong>2024-02-28：</strong> 495.8 kWh</div>
+                <div style="margin-bottom: 8px;"><strong>2024-02-27：</strong> 521.4 kWh</div>
+                <div><strong>2024-02-26：</strong> 468.9 kWh</div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal('dataHistoryModal')">關閉</button>
+                <button class="btn btn-primary" onclick="exportHistory()">📤 導出</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function selectMeterType(type) {
+            document.querySelectorAll('.protocol-btn').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('real-meter-section').style.display = type === 'real' ? 'block' : 'none';
+            document.getElementById('virtual-meter-section').style.display = type === 'virtual' ? 'block' : 'none';
+        }
+
+        function connectMeter() {
+            const protocol = document.getElementById('protocol').value;
+            const addr = document.getElementById('connectionAddr').value;
+            const meterId = document.getElementById('meterId').value;
+
+            if (!addr || !meterId) {
+                alert('請填寫完整信息');
+                return;
+            }
+
+            alert(`✅ 電表已連接\n協議：${protocol}\n地址：${addr}\n編號：${meterId}`);
+        }
+
+        function createVirtualMeter() {
+            const meterId = document.getElementById('virtualMeterId').value;
+            const basePower = document.getElementById('basePower').value;
+            const fluctuation = document.getElementById('fluctuation').value;
+
+            if (!meterId) {
+                alert('請輸入虛擬電表編號');
+                return;
+            }
+
+            alert(`✅ 虛擬電表已創建\n編號：${meterId}\n基礎功率：${basePower}kW\n波動範圍：±${fluctuation}%`);
+        }
+
+        function selectActiveMeter(meterId) {
+            alert(`已切換到電表：${meterId}`);
+        }
+
+        function editMeter(meterId) {
+            alert(`編輯電表：${meterId}`);
+        }
+
+        function deleteMeter(meterId) {
+            if (confirm(`確認刪除電表：${meterId}？`)) {
+                alert(`電表已刪除：${meterId}`);
+            }
+        }
+
+        function refreshData() {
+            alert('✅ 數據已刷新');
+            updateRealTimeData();
+        }
+
+        function updateRealTimeData() {
+            document.getElementById('powerValue').textContent = (Math.random() * 60 + 20).toFixed(1);
+            document.getElementById('todayValue').textContent = (Math.random() * 100 + 350).toFixed(1);
+        }
+
+        function openDataHistory() {
+            document.getElementById('dataHistoryModal').classList.add('show');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        function showProtocolDetails() {
+            alert('協議詳細配置文檔\n\n詳見：METER-PROTOCOL-GUIDE.md');
+        }
+
+        function importMeterConfig() {
+            alert('支持導入 JSON 格式的電表配置文件');
+        }
+
+        function exportMeterData() {
+            alert('✅ 數據已導出為 CSV 格式');
+        }
+
+        function backupData() {
+            alert('✅ 數據已備份');
+        }
+
+        function resetAllData() {
+            if (confirm('確認要重置所有數據？此操作無法撤銷')) {
+                alert('✅ 所有數據已重置');
+            }
+        }
+
+        function testConnection() {
+            alert('⏳ 正在測試連接...\n✅ 連接測試成功\n延遲：45ms');
+        }
+
+        function checkDataFlow() {
+            alert('⏳ 正在檢查數據流...\n✅ 數據流暢通\n當前速率：12.5 kB/s');
+        }
+
+        function viewLogs() {
+            alert('最近操作日誌：\n2024-03-01 14:30 - 連接成功\n2024-03-01 14:25 - 配置更新\n2024-03-01 14:20 - 數據同步');
+        }
+
+        function diagnostics() {
+            alert('✅ 完整診斷報告\n系統狀態：正常\n連接：✓\n數據流：✓\n存儲：✓');
+        }
+
+        function exportHistory() {
+            alert('✅ 歷史數據已導出');
+            closeModal('dataHistoryModal');
+        }
+    </script>
+</body>
+</html>

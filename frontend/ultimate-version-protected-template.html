@@ -1,0 +1,600 @@
+<!-- EliteGets Ultimate 版本 - 企業級防盜版和防破解保護 -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteGets 電表管理系統 - Ultimate 版本</title>
+    
+    <!-- 安全 Headers -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        /* 防止複製和選擇 */
+        body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        
+        /* 隱藏敏感內容直到驗證 */
+        .protected-content {
+            display: none;
+        }
+        
+        .protected-content.unlocked {
+            display: block;
+        }
+        
+        .security-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            flex-direction: column;
+            gap: 20px;
+            color: white;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .security-message {
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        .warning-banner {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .warning-banner.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- 安全加載屏 -->
+    <div id="securityLoadingScreen" class="security-loading">
+        <div class="spinner"></div>
+        <div class="security-message">
+            🔐 正在驗證許可證...
+        </div>
+    </div>
+    
+    <!-- 警告橫幅 -->
+    <div id="warningBanner" class="warning-banner">
+        ⚠️ 許可證驗證失敗 - 功能已禁用
+    </div>
+    
+    <!-- 受保護的內容 -->
+    <div id="protectedContent" class="protected-content">
+        <!-- 您的應用內容在這裡 -->
+        <div style="padding: 20px;">
+            <h1>⚡ EliteGets 電表管理系統 - Ultimate</h1>
+            <p>許可證已驗證 ✅</p>
+        </div>
+    </div>
+
+    <!-- 許可證保護系統核心代碼 -->
+    <script>
+        'use strict';
+        
+        // ============================================
+        // 第 1 層：反調試和反虛擬化
+        // ============================================
+        
+        (function() {
+            // 防止 console 訪問
+            const blockConsole = () => {
+                const noop = () => {};
+                console.log = noop;
+                console.error = noop;
+                console.warn = noop;
+                console.info = noop;
+                console.debug = noop;
+            };
+            
+            // 檢測虛擬機
+            const detectVM = () => {
+                const userAgent = navigator.userAgent.toLowerCase();
+                const vmIndicators = [
+                    'virtualbox',
+                    'vmware',
+                    'kvm',
+                    'qemu',
+                    'xen',
+                    'hyperv',
+                    'docker',
+                    'wine'
+                ];
+                return vmIndicators.some(vm => userAgent.includes(vm));
+            };
+            
+            // 檢測代理/調試工具
+            const detectDebugTools = () => {
+                const devToolsOpen = () => {
+                    const threshold = 160;
+                    if (window.outerHeight - window.innerHeight > threshold ||
+                        window.outerWidth - window.innerWidth > threshold) {
+                        return true;
+                    }
+                    return false;
+                };
+                
+                return devToolsOpen();
+            };
+            
+            // 防止 eval
+            window.eval = new Proxy(eval, {
+                apply(target, thisArg, args) {
+                    console.error('❌ eval 已被禁用');
+                    return null;
+                }
+            });
+            
+            // 禁用開發者工具快捷鍵
+            document.addEventListener('keydown', function(event) {
+                // F12
+                if (event.key === 'F12') {
+                    event.preventDefault();
+                    return false;
+                }
+                // Ctrl+Shift+I
+                if (event.ctrlKey && event.shiftKey && event.key === 'I') {
+                    event.preventDefault();
+                    return false;
+                }
+                // Ctrl+Shift+J
+                if (event.ctrlKey && event.shiftKey && event.key === 'J') {
+                    event.preventDefault();
+                    return false;
+                }
+                // Ctrl+Shift+C
+                if (event.ctrlKey && event.shiftKey && event.key === 'C') {
+                    event.preventDefault();
+                    return false;
+                }
+            });
+            
+            // 禁用右鍵菜單
+            document.addEventListener('contextmenu', function(event) {
+                event.preventDefault();
+                return false;
+            });
+            
+            // 禁用複製
+            document.addEventListener('copy', function(event) {
+                event.preventDefault();
+                return false;
+            });
+            
+            // 禁用拖放
+            document.addEventListener('dragstart', function(event) {
+                event.preventDefault();
+                return false;
+            });
+            
+            // 檢查虛擬機和調試工具
+            if (detectVM()) {
+                window.location.href = 'about:blank';
+            }
+            
+            if (detectDebugTools()) {
+                blockConsole();
+            }
+        })();
+        
+        // ============================================
+        // 第 2 層：許可證驗證系統
+        // ============================================
+        
+        class EnhancedLicenseProtection {
+            constructor() {
+                this.licenseKey = null;
+                this.deviceFingerprint = null;
+                this.licenseServer = 'https://license.elitegets.com';
+                this.verificationAttempts = 0;
+                this.maxAttempts = 3;
+                this.lockoutTime = 3600000; // 1 小時
+                this.lastVerificationTime = null;
+            }
+            
+            // 生成增強型設備指紋
+            async generateEnhancedFingerprint() {
+                const components = {
+                    // 軟件指紋
+                    userAgent: this.hashString(navigator.userAgent),
+                    language: navigator.language,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    
+                    // 硬件指紋
+                    canvas: await this.getCanvasFingerprint(),
+                    webgl: this.getWebGLFingerprint(),
+                    fonts: this.getFontFingerprint(),
+                    
+                    // 網絡指紋
+                    connection: navigator.connection?.effectiveType || 'unknown',
+                    
+                    // 瀏覽器指紋
+                    vendor: navigator.vendor,
+                    platform: navigator.platform,
+                    hardwareConcurrency: navigator.hardwareConcurrency,
+                    deviceMemory: navigator.deviceMemory,
+                    
+                    // 存儲指紋
+                    localStorage: this.getStorageFingerprint(),
+                    indexedDB: await this.getIndexedDBFingerprint()
+                };
+                
+                const fingerprintString = JSON.stringify(components);
+                return await this.sha256(fingerprintString);
+            }
+            
+            // SHA-256 哈希
+            async sha256(message) {
+                const msgBuffer = new TextEncoder().encode(message);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            
+            // Canvas 指紋
+            async getCanvasFingerprint() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 280;
+                    canvas.height = 60;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.textBaseline = 'top';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillStyle = '#f60';
+                    ctx.fillRect(125, 1, 62, 20);
+                    ctx.fillStyle = '#069';
+                    ctx.fillText('EliteGets Protection', 2, 15);
+                    ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+                    ctx.fillText('🔐 Secure', 120, 15);
+                    
+                    return await this.sha256(canvas.toDataURL());
+                } catch (e) {
+                    return 'canvas_unavailable';
+                }
+            }
+            
+            // WebGL 指紋
+            getWebGLFingerprint() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    return `${vendor}|${renderer}`.substring(0, 50);
+                } catch (e) {
+                    return 'webgl_unavailable';
+                }
+            }
+            
+            // 字體指紋
+            getFontFingerprint() {
+                const baseFonts = ['monospace', 'sans-serif', 'serif'];
+                const testFonts = ['Arial', 'Verdana', 'Georgia', 'Times New Roman'];
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                let fontStr = '';
+                testFonts.forEach(font => {
+                    ctx.font = `14px "${font}", ${baseFonts[0]}`;
+                    fontStr += ctx.measureText('abcdefg').width;
+                });
+                
+                return fontStr;
+            }
+            
+            // 存儲指紋
+            getStorageFingerprint() {
+                let storageId = localStorage.getItem('__eg_device_id');
+                if (!storageId) {
+                    storageId = 'dev_' + Math.random().toString(36).substr(2, 16);
+                    try {
+                        localStorage.setItem('__eg_device_id', storageId);
+                    } catch (e) {}
+                }
+                return storageId;
+            }
+            
+            // IndexedDB 指紋
+            async getIndexedDBFingerprint() {
+                return new Promise(resolve => {
+                    const request = indexedDB.open('__eg_fp_db', 1);
+                    request.onsuccess = () => {
+                        const db = request.result;
+                        resolve(db.name + db.version);
+                        db.close();
+                    };
+                    request.onerror = () => resolve('indexeddb_unavailable');
+                });
+            }
+            
+            // 哈希字符串
+            hashString(str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return Math.abs(hash).toString(16);
+            }
+            
+            // 驗證許可證
+            async verifyLicense(licenseKey) {
+                // 檢查是否被鎖定
+                if (this.isLockedOut()) {
+                    this.showLicenseError('system_locked');
+                    return { valid: false, locked: true };
+                }
+                
+                this.licenseKey = licenseKey;
+                this.deviceFingerprint = await this.generateEnhancedFingerprint();
+                
+                try {
+                    // 嘗試線上驗證
+                    const result = await this.verifyOnline(licenseKey);
+                    
+                    if (result.valid) {
+                        this.verificationAttempts = 0;
+                        this.lastVerificationTime = Date.now();
+                        this.storeVerificationToken(result.token);
+                        return { valid: true, mode: 'online' };
+                    } else {
+                        this.incrementVerificationAttempts();
+                        return { valid: false, reason: result.reason };
+                    }
+                } catch (error) {
+                    console.error('Online verification failed:', error);
+                    // 降級到離線模式
+                    return await this.verifyOffline();
+                }
+            }
+            
+            // 線上驗證
+            async verifyOnline(licenseKey) {
+                const request = {
+                    licenseKey: licenseKey,
+                    deviceFingerprint: this.deviceFingerprint,
+                    timestamp: Date.now(),
+                    userAgent: navigator.userAgent
+                };
+                
+                const response = await fetch(`${this.licenseServer}/api/v2/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-License-Request': this.deviceFingerprint
+                    },
+                    body: JSON.stringify(request),
+                    timeout: 30000
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Verification server error');
+                }
+                
+                const data = await response.json();
+                
+                // 驗證響應簽名
+                if (!this.verifyResponseSignature(data)) {
+                    throw new Error('Invalid response signature');
+                }
+                
+                return data;
+            }
+            
+            // 離線驗證
+            async verifyOffline() {
+                const token = this.getStoredToken();
+                
+                if (!token) {
+                    return { valid: false, reason: 'no_offline_token' };
+                }
+                
+                const isValid = await this.validateToken(token);
+                if (!isValid) {
+                    return { valid: false, reason: 'invalid_token' };
+                }
+                
+                return { valid: true, mode: 'offline' };
+            }
+            
+            // 驗證令牌
+            async validateToken(token) {
+                try {
+                    const tokenData = JSON.parse(atob(token.data));
+                    
+                    // 檢查過期
+                    if (Date.now() > tokenData.expiryTime) {
+                        return false;
+                    }
+                    
+                    // 驗證簽名
+                    const expectedSig = await this.sha256(
+                        tokenData.token + this.deviceFingerprint + tokenData.issuedAt
+                    );
+                    
+                    return token.signature === expectedSig;
+                } catch (e) {
+                    return false;
+                }
+            }
+            
+            // 驗證響應簽名
+            verifyResponseSignature(data) {
+                // 簡化版本，實際應使用 RSA-4096
+                return !!data.signature;
+            }
+            
+            // 存儲驗證令牌
+            storeVerificationToken(token) {
+                const expiryTime = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 天
+                const tokenData = {
+                    token: token,
+                    issuedAt: Date.now(),
+                    expiryTime: expiryTime
+                };
+                
+                const signature = this.hashString(JSON.stringify(tokenData));
+                
+                const encrypted = {
+                    data: btoa(JSON.stringify(tokenData)),
+                    signature: signature
+                };
+                
+                try {
+                    localStorage.setItem('__eg_token', JSON.stringify(encrypted));
+                } catch (e) {}
+            }
+            
+            // 獲取存儲的令牌
+            getStoredToken() {
+                try {
+                    return JSON.parse(localStorage.getItem('__eg_token'));
+                } catch (e) {
+                    return null;
+                }
+            }
+            
+            // 檢查是否被鎖定
+            isLockedOut() {
+                const lockTime = localStorage.getItem('__eg_lockout_time');
+                if (!lockTime) return false;
+                
+                const timeLeft = parseInt(lockTime) - Date.now();
+                if (timeLeft > 0) {
+                    return true;
+                } else {
+                    localStorage.removeItem('__eg_lockout_time');
+                    this.verificationAttempts = 0;
+                    return false;
+                }
+            }
+            
+            // 增加驗證嘗試次數
+            incrementVerificationAttempts() {
+                this.verificationAttempts++;
+                
+                if (this.verificationAttempts >= this.maxAttempts) {
+                    localStorage.setItem('__eg_lockout_time', 
+                        (Date.now() + this.lockoutTime).toString());
+                }
+            }
+            
+            // 顯示許可證錯誤
+            showLicenseError(reason) {
+                const banner = document.getElementById('warningBanner');
+                if (banner) {
+                    banner.textContent = '❌ 許可證驗證失敗 - 所有功能已禁用';
+                    banner.classList.add('show');
+                }
+                
+                // 禁用所有受保護的內容
+                this.disableAllFeatures();
+            }
+            
+            // 禁用所有功能
+            disableAllFeatures() {
+                const protected = document.getElementById('protectedContent');
+                if (protected) {
+                    protected.classList.remove('unlocked');
+                    protected.style.opacity = '0.3';
+                    protected.style.pointerEvents = 'none';
+                }
+            }
+            
+            // 解鎖受保護內容
+            unlockFeatures() {
+                const loading = document.getElementById('securityLoadingScreen');
+                const protected = document.getElementById('protectedContent');
+                
+                if (loading) loading.style.display = 'none';
+                if (protected) protected.classList.add('unlocked');
+            }
+        }
+        
+        // ============================================
+        // 第 3 層：初始化和啟動
+        // ============================================
+        
+        (async function() {
+            try {
+                const protection = new EnhancedLicenseProtection();
+                
+                // 從本地存儲或環境變量獲取許可證鑰
+                const licenseKey = localStorage.getItem('__eg_license_key') || 
+                                 (window.ELITEGETS_LICENSE_KEY || null);
+                
+                if (!licenseKey) {
+                    throw new Error('No license key found');
+                }
+                
+                // 驗證許可證
+                const result = await protection.verifyLicense(licenseKey);
+                
+                if (result.valid) {
+                    protection.unlockFeatures();
+                    console.log('✅ License verified successfully');
+                    
+                    // 定期重新驗證
+                    setInterval(async () => {
+                        await protection.verifyLicense(licenseKey);
+                    }, 24 * 60 * 60 * 1000); // 每 24 小時
+                } else {
+                    protection.showLicenseError(result.reason);
+                    console.error('❌ License verification failed');
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+                document.body.innerHTML = '<h1 style="text-align:center; margin-top:50px;">❌ 系統初始化失敗</h1>';
+            }
+        })();
+    </script>
+</body>
+</html>

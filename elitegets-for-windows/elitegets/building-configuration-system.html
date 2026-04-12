@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能源管理平台 - 建築物配置系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 50%, #e0f2fe 100%);
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a365d 100%);
+            color: #ffffff;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        body.dark .navbar {
+            background: rgba(30, 41, 59, 0.95);
+            border-bottom-color: #475569;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .btn-toggle:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark .btn-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 主佈局 */
+        .main-wrapper {
+            display: flex;
+            width: 100%;
+            margin-top: 70px;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: white;
+            border-right: 2px solid #e5e7eb;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        body.dark .sidebar {
+            background: #1e293b;
+            border-right-color: #475569;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .building-palette {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .building-item {
+            padding: 16px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: grab;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .building-item {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        .building-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .building-item:active {
+            cursor: grabbing;
+        }
+
+        .building-item-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .building-item-name {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* 電錶列表 */
+        .meter-list {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        body.dark .meter-list {
+            background: #334155;
+        }
+
+        .meter-item {
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            cursor: grab;
+        }
+
+        body.dark .meter-item {
+            background: #1e293b;
+        }
+
+        .meter-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 畫布區域 */
+        .canvas-area {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e0f2fe 100%);
+        }
+
+        body.dark .canvas-area {
+            background: linear-gradient(135deg, #1a365d 0%, #0f172a 100%);
+        }
+
+        .canvas {
+            position: relative;
+            min-height: 600px;
+            background: rgba(255, 255, 255, 0.5);
+            border: 3px dashed #ccc;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        body.dark .canvas {
+            background: rgba(30, 41, 59, 0.5);
+            border-color: #475569;
+        }
+
+        .canvas.drag-over {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+        }
+
+        /* 建築物卡片 */
+        .building-card {
+            position: absolute;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            min-width: 200px;
+            cursor: move;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        body.dark .building-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .building-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .building-card.selected {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .building-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .building-icon {
+            font-size: 32px;
+        }
+
+        .building-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-small {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: #f0f4f8;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        body.dark .btn-small {
+            background: #334155;
+        }
+
+        .btn-small:hover {
+            background: #e5e7eb;
+        }
+
+        body.dark .btn-small:hover {
+            background: #475569;
+        }
+
+        .building-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .building-meters {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 12px;
+            min-height: 20px;
+        }
+
+        body.dark .building-meters {
+            color: #aaa;
+        }
+
+        .building-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        body.dark .building-stats {
+            background: #334155;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 10px;
+        }
+
+        body.dark .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #3b82f6;
+            font-size: 14px;
+        }
+
+        /* 模態對話框 */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark .modal-content {
+            background: #1e293b;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        body.dark .form-input,
+        body.dark .form-select {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .meter-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 12px;
+        }
+
+        .meter-checkbox {
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        body.dark .meter-checkbox {
+            background: #334155;
+        }
+
+        .meter-checkbox input {
+            cursor: pointer;
+        }
+
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        body.dark .btn-secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        /* 提示訊息 */
+        .info-box {
+            padding: 12px;
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #1e40af;
+            margin-bottom: 16px;
+        }
+
+        body.dark .info-box {
+            background: #1e3a8a;
+            color: #93c5fd;
+        }
+
+        /* 拖動效果 */
+        .dragging {
+            opacity: 0.5;
+        }
+
+        .drag-preview {
+            position: absolute;
+            pointer-events: none;
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: bold;
+            opacity: 0.8;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="navbar">
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <span>能源管理平台 - 建築物配置</span>
+        </div>
+        <div class="nav-controls">
+            <button class="btn-toggle" onclick="toggleDarkMode()" title="切換深浚模式">
+                <span id="theme-toggle">🌙</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主佈局 -->
+    <div class="main-wrapper">
+        <!-- 左側邊欄 -->
+        <div class="sidebar">
+            <!-- 建築物拖放模板 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">🏢 建築物模板</div>
+                <div class="building-palette">
+                    <div class="building-item" draggable="true" data-type="office">
+                        <div class="building-item-icon">🏢</div>
+                        <div class="building-item-name">寫字樓</div>
+                    </div>
+                    <div class="building-item" draggable="true" data-type="factory">
+                        <div class="building-item-icon">🏭</div>
+                        <div class="building-item-name">工廠</div>
+                    </div>
+                    <div class="building-item" draggable="true" data-type="warehouse">
+                        <div class="building-item-icon">🏗️</div>
+                        <div class="building-item-name">倉庫</div>
+                    </div>
+                    <div class="building-item" draggable="true" data-type="retail">
+                        <div class="building-item-icon">🏬</div>
+                        <div class="building-item-name">商業中心</div>
+                    </div>
+                    <div class="building-item" draggable="true" data-type="datacenter">
+                        <div class="building-item-icon">🖥️</div>
+                        <div class="building-item-name">數據中心</div>
+                    </div>
+                    <div class="building-item" draggable="true" data-type="residential">
+                        <div class="building-item-icon">🏠</div>
+                        <div class="building-item-name">住宅區</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 已連接電錶列表 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">🔌 可用電錶</div>
+                <div class="info-box">
+                    拖動建築物模板到右側畫布，然後配置關聯電錶
+                </div>
+                <div class="meter-list" id="meter-list">
+                    <div style="padding: 20px; text-align: center; color: #999;">
+                        等待連接...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 統計信息 -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">📊 園區統計</div>
+                <div style="display: grid; gap: 12px;">
+                    <div style="padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #999;">建築物數量</div>
+                        <div style="font-size: 18px; font-weight: bold;" id="building-count">0</div>
+                    </div>
+                    <div style="padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #999;">實時功率</div>
+                        <div style="font-size: 18px; font-weight: bold;" id="total-power">0 kW</div>
+                    </div>
+                    <div style="padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #999;">今日碳排</div>
+                        <div style="font-size: 18px; font-weight: bold;" id="total-carbon">0 kg</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 畫布區域 -->
+        <div class="canvas-area">
+            <div class="canvas" id="canvas">
+                <div style="text-align: center; color: #999; padding: 40px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🏢</div>
+                    <div style="font-size: 16px; margin-bottom: 8px;">拖放建築物到此區域</div>
+                    <div style="font-size: 12px;">點擊編輯建築物和配置電錶</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯建築物模態 -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-title">編輯建築物</div>
+            
+            <div class="form-group">
+                <label class="form-label">建築物名稱</label>
+                <input type="text" class="form-input" id="building-name-input" placeholder="例：A棟寫字樓">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">選擇關聯電錶</label>
+                <div id="meter-selector" class="meter-selector"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">碳排係數（kg CO₂/kWh）</label>
+                <input type="number" class="form-input" id="carbon-coefficient" value="0.5" min="0" step="0.01" placeholder="0.5">
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="saveBuilding()">💾 保存</button>
+                <button class="btn btn-secondary" onclick="closeModal()">✕ 取消</button>
+            </div>
+            <button class="btn btn-danger" style="width: 100%; margin-top: 12px;" onclick="deleteBuilding()">🗑️ 刪除建築物</button>
+        </div>
+    </div>
+
+    <script>
+        // 數據存儲
+        let buildings = JSON.parse(localStorage.getItem('buildings')) || {};
+        let meters = JSON.parse(localStorage.getItem('meters')) || [];
+        let selectedBuildingId = null;
+        let draggedType = null;
+
+        // 模擬電錶數據
+        const mockMeters = [
+            { id: 'meter_001', name: 'A棟電錶', power: 85, energy: 2040, status: '正常' },
+            { id: 'meter_002', name: 'B棟電錶', power: 120, energy: 2880, status: '正常' },
+            { id: 'meter_003', name: 'C棟電錶', power: 145, energy: 3480, status: '正常' },
+            { id: 'meter_004', name: 'D棟電錶', power: 92, energy: 2208, status: '正常' },
+            { id: 'meter_005', name: 'E棟電錶', power: 62, energy: 1488, status: '正常' },
+        ];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            loadMeterList();
+            loadBuildings();
+            setupDragAndDrop();
+            updateStats();
+            
+            // 模擬實時更新
+            setInterval(updateStats, 5000);
+        });
+
+        // 深浚模式
+        function initDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark');
+                document.getElementById('theme-toggle').textContent = '☀️';
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // 載入電錶列表
+        function loadMeterList() {
+            const list = document.getElementById('meter-list');
+            list.innerHTML = mockMeters.map(meter => `
+                <div class="meter-item">
+                    <strong>${meter.name}</strong>
+                    <div style="margin-top: 4px; color: #666;">
+                        ${meter.power} kW | ${meter.energy} kWh
+                    </div>
+                </div>
+            `).join('');
+            
+            meters = mockMeters;
+        }
+
+        // 設置拖放事件
+        function setupDragAndDrop() {
+            const canvas = document.getElementById('canvas');
+            const items = document.querySelectorAll('.building-item');
+
+            items.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedType = item.dataset.type;
+                    item.classList.add('dragging');
+                });
+
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('dragging');
+                });
+            });
+
+            canvas.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                canvas.classList.add('drag-over');
+            });
+
+            canvas.addEventListener('dragleave', () => {
+                canvas.classList.remove('drag-over');
+            });
+
+            canvas.addEventListener('drop', (e) => {
+                e.preventDefault();
+                canvas.classList.remove('drag-over');
+                
+                if (draggedType) {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    addBuilding(draggedType, x, y);
+                }
+            });
+        }
+
+        // 建築物類型信息
+        const buildingTypes = {
+            office: { name: '寫字樓', icon: '🏢', color: '#3b82f6' },
+            factory: { name: '工廠', icon: '🏭', color: '#f97316' },
+            warehouse: { name: '倉庫', icon: '🏗️', color: '#8b5cf6' },
+            retail: { name: '商業中心', icon: '🏬', color: '#ec4899' },
+            datacenter: { name: '數據中心', icon: '🖥️', color: '#06b6d4' },
+            residential: { name: '住宅區', icon: '🏠', color: '#10b981' },
+        };
+
+        // 添加建築物
+        function addBuilding(type, x, y) {
+            const id = 'building_' + Date.now();
+            const typeInfo = buildingTypes[type];
+            
+            buildings[id] = {
+                id,
+                type,
+                name: typeInfo.name,
+                x: Math.max(10, x - 100),
+                y: Math.max(10, y - 30),
+                meters: [],
+                carbonCoefficient: 0.5
+            };
+            
+            saveBuildings();
+            renderBuilding(id);
+        }
+
+        // 渲染建築物
+        function renderBuilding(id) {
+            const building = buildings[id];
+            const typeInfo = buildingTypes[building.type];
+            const canvas = document.getElementById('canvas');
+            
+            let cardElement = document.getElementById(`card-${id}`);
+            
+            if (!cardElement) {
+                cardElement = document.createElement('div');
+                cardElement.id = `card-${id}`;
+                cardElement.className = 'building-card';
+                cardElement.addEventListener('mousedown', (e) => startDrag(e, id));
+                cardElement.addEventListener('click', () => selectBuilding(id));
+                canvas.appendChild(cardElement);
+            }
+
+            // 計算建築物用電和碳排
+            let totalPower = 0;
+            let totalEnergy = 0;
+            building.meters.forEach(meterId => {
+                const meter = meters.find(m => m.id === meterId);
+                if (meter) {
+                    totalPower += meter.power || 0;
+                    totalEnergy += meter.energy || 0;
+                }
+            });
+            
+            const carbonEmission = (totalEnergy * building.carbonCoefficient).toFixed(2);
+
+            cardElement.innerHTML = `
+                <div class="building-header">
+                    <div class="building-icon">${typeInfo.icon}</div>
+                    <div class="building-actions">
+                        <button class="btn-small" onclick="editBuilding('${id}')" title="編輯">✏️</button>
+                        <button class="btn-small" onclick="duplicateBuilding('${id}')" title="複製">📋</button>
+                    </div>
+                </div>
+                <div class="building-name">${building.name}</div>
+                <div class="building-meters">
+                    ${building.meters.length > 0 
+                        ? `連結 ${building.meters.length} 個電錶` 
+                        : '未配置電錶 (點擊編輯)'}
+                </div>
+                <div class="building-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">實時功率</div>
+                        <div class="stat-value">${totalPower} kW</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">碳排</div>
+                        <div class="stat-value">${carbonEmission} kg</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">用電量</div>
+                        <div class="stat-value">${totalEnergy} kWh</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">狀態</div>
+                        <div class="stat-value" style="color: #10b981;">✓ 正常</div>
+                    </div>
+                </div>
+            `;
+
+            cardElement.style.left = building.x + 'px';
+            cardElement.style.top = building.y + 'px';
+            
+            if (selectedBuildingId === id) {
+                cardElement.classList.add('selected');
+            } else {
+                cardElement.classList.remove('selected');
+            }
+        }
+
+        // 拖動建築物
+        let draggingElement = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        function startDrag(e, id) {
+            if (e.button !== 0) return;
+            
+            draggingElement = { id, card: document.getElementById(`card-${id}`) };
+            const rect = draggingElement.card.getBoundingClientRect();
+            const canvas = document.getElementById('canvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            
+            document.addEventListener('mousemove', doDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function doDrag(e) {
+            if (!draggingElement) return;
+            
+            const canvas = document.getElementById('canvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            let x = e.clientX - canvasRect.left - dragOffset.x;
+            let y = e.clientY - canvasRect.top - dragOffset.y;
+            
+            x = Math.max(0, Math.min(x, canvasRect.width - 250));
+            y = Math.max(0, Math.min(y, canvasRect.height - 100));
+            
+            buildings[draggingElement.id].x = x;
+            buildings[draggingElement.id].y = y;
+            
+            draggingElement.card.style.left = x + 'px';
+            draggingElement.card.style.top = y + 'px';
+        }
+
+        function stopDrag() {
+            if (draggingElement) {
+                saveBuildings();
+                draggingElement = null;
+            }
+            document.removeEventListener('mousemove', doDrag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        // 選擇建築物
+        function selectBuilding(id) {
+            selectedBuildingId = id;
+            loadBuildings();
+        }
+
+        // 編輯建築物
+        function editBuilding(id) {
+            selectedBuildingId = id;
+            const building = buildings[id];
+            
+            document.getElementById('building-name-input').value = building.name;
+            document.getElementById('carbon-coefficient').value = building.carbonCoefficient;
+            
+            // 生成電錶選擇器
+            const selector = document.getElementById('meter-selector');
+            selector.innerHTML = meters.map(meter => `
+                <label class="meter-checkbox">
+                    <input type="checkbox" value="${meter.id}" 
+                        ${building.meters.includes(meter.id) ? 'checked' : ''}>
+                    <span>${meter.name}</span>
+                </label>
+            `).join('');
+            
+            document.getElementById('edit-modal').classList.add('show');
+        }
+
+        // 保存建築物
+        function saveBuilding() {
+            if (!selectedBuildingId) return;
+            
+            const building = buildings[selectedBuildingId];
+            building.name = document.getElementById('building-name-input').value || '未命名建築物';
+            building.carbonCoefficient = parseFloat(document.getElementById('carbon-coefficient').value) || 0.5;
+            
+            // 獲取選中的電錶
+            const selectedMeters = Array.from(document.querySelectorAll('#meter-selector input:checked'))
+                .map(cb => cb.value);
+            building.meters = selectedMeters;
+            
+            saveBuildings();
+            renderBuilding(selectedBuildingId);
+            closeModal();
+            updateStats();
+        }
+
+        // 複製建築物
+        function duplicateBuilding(id) {
+            const building = buildings[id];
+            const newId = 'building_' + Date.now();
+            
+            buildings[newId] = {
+                ...building,
+                id: newId,
+                x: building.x + 30,
+                y: building.y + 30
+            };
+            
+            saveBuildings();
+            renderBuilding(newId);
+        }
+
+        // 刪除建築物
+        function deleteBuilding() {
+            if (!selectedBuildingId) return;
+            
+            if (confirm('確定要刪除此建築物嗎？')) {
+                const card = document.getElementById(`card-${selectedBuildingId}`);
+                card?.remove();
+                delete buildings[selectedBuildingId];
+                saveBuildings();
+                closeModal();
+                selectedBuildingId = null;
+                updateStats();
+            }
+        }
+
+        // 關閉模態
+        function closeModal() {
+            document.getElementById('edit-modal').classList.remove('show');
+        }
+
+        // 保存和載入
+        function saveBuildings() {
+            localStorage.setItem('buildings', JSON.stringify(buildings));
+        }
+
+        function loadBuildings() {
+            const canvas = document.getElementById('canvas');
+            canvas.querySelectorAll('.building-card').forEach(el => el.remove());
+            
+            Object.keys(buildings).forEach(id => renderBuilding(id));
+        }
+
+        // 更新統計信息
+        function updateStats() {
+            let totalPower = 0;
+            let totalCarbon = 0;
+
+            Object.values(buildings).forEach(building => {
+                let power = 0;
+                let energy = 0;
+                
+                building.meters.forEach(meterId => {
+                    const meter = meters.find(m => m.id === meterId);
+                    if (meter) {
+                        power += meter.power || 0;
+                        energy += meter.energy || 0;
+                    }
+                });
+                
+                totalPower += power;
+                totalCarbon += energy * building.carbonCoefficient;
+            });
+
+            document.getElementById('building-count').textContent = Object.keys(buildings).length;
+            document.getElementById('total-power').textContent = totalPower.toFixed(1) + ' kW';
+            document.getElementById('total-carbon').textContent = totalCarbon.toFixed(2) + ' kg';
+        }
+
+        // 模擬實時數據更新（加入隨機波動）
+        setInterval(() => {
+            meters.forEach(meter => {
+                meter.power = Math.max(20, meter.power + (Math.random() - 0.5) * 20);
+                meter.energy = Math.min(5000, meter.energy + (Math.random() - 0.5) * 50);
+            });
+            
+            loadBuildings();
+            updateStats();
+        }, 5000);
+
+        // 關閉模態點擊背景
+        document.getElementById('edit-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'edit-modal') closeModal();
+        });
+    </script>
+</body>
+</html>

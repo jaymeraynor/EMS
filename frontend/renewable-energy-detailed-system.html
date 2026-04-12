@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可再生能源管理系統 - 發電記錄統計</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 50%, #e0f2fe 100%);
+            color: #333;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a365d 100%);
+            color: #ffffff;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        body.dark .navbar {
+            background: rgba(30, 41, 59, 0.95);
+            border-bottom-color: #475569;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #10b981, #22c55e);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .btn-toggle:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark .btn-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .main-wrapper {
+            display: flex;
+            width: 100%;
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+        }
+
+        .sidebar {
+            width: 380px;
+            background: white;
+            border-right: 2px solid #e5e7eb;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        body.dark .sidebar {
+            background: #1e293b;
+            border-right-color: #475569;
+        }
+
+        .content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 統計卡片 */
+        .stat-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        body.dark .stat-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #999;
+        }
+
+        body.dark .stat-label {
+            color: #aaa;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #10b981, #22c55e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-unit {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        body.dark .stat-unit {
+            color: #aaa;
+        }
+
+        /* 能源設備卡片 */
+        .device-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        body.dark .device-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .device-name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .device-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-small {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: #f0f4f8;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        body.dark .btn-small {
+            background: #334155;
+        }
+
+        .btn-small:hover {
+            background: #e5e7eb;
+        }
+
+        .device-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .device-stat {
+            padding: 8px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        body.dark .device-stat {
+            background: #334155;
+        }
+
+        .device-stat-label {
+            font-size: 10px;
+            color: #999;
+        }
+
+        body.dark .device-stat-label {
+            color: #aaa;
+        }
+
+        .device-stat-value {
+            font-weight: bold;
+            font-size: 14px;
+            color: #10b981;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        body.dark .progress-bar {
+            background: #334155;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #22c55e);
+        }
+
+        /* 圖表區域 */
+        .chart-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        body.dark .chart-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        /* 能源組成圖 */
+        .energy-mix-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .energy-type-box {
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+        }
+
+        body.dark .energy-type-box {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .energy-type-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        .energy-type-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .energy-type-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #10b981;
+            margin-bottom: 4px;
+        }
+
+        .energy-type-percent {
+            font-size: 12px;
+            color: #999;
+        }
+
+        body.dark .energy-type-percent {
+            color: #aaa;
+        }
+
+        /* 碳排對比 */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .comparison-box {
+            padding: 16px;
+            background: white;
+            border-radius: 12px;
+            border-left: 4px solid;
+            text-align: center;
+        }
+
+        body.dark .comparison-box {
+            background: #1e293b;
+        }
+
+        .comparison-box.actual {
+            border-left-color: #3b82f6;
+        }
+
+        .comparison-box.grid-only {
+            border-left-color: #999;
+        }
+
+        .comparison-box.saved {
+            border-left-color: #10b981;
+        }
+
+        .comparison-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .comparison-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .comparison-unit {
+            font-size: 11px;
+            color: #999;
+        }
+
+        /* 標籤頁 */
+        .tab-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        body.dark .tab-buttons {
+            border-bottom-color: #475569;
+        }
+
+        .tab-btn {
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        body.dark .tab-btn {
+            color: #aaa;
+        }
+
+        .tab-btn.active {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 歷史記錄表 */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        body.dark .history-table th,
+        body.dark .history-table td {
+            border-bottom-color: #475569;
+        }
+
+        .history-table th {
+            background: #f9fafb;
+            font-weight: bold;
+        }
+
+        body.dark .history-table th {
+            background: #334155;
+        }
+
+        /* 模態 */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        body.dark .modal-content {
+            background: #1e293b;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        body.dark .form-input,
+        body.dark .form-select {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #10b981, #22c55e);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        body.dark .btn-secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        /* 提示框 */
+        .info-box {
+            padding: 12px;
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #065f46;
+            margin-bottom: 16px;
+        }
+
+        body.dark .info-box {
+            background: #064e3b;
+            color: #86efac;
+        }
+
+        /* 響應式 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 320px;
+            }
+
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-wrapper {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 2px solid #e5e7eb;
+            }
+
+            .energy-mix-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="navbar">
+        <div class="logo">
+            <div class="logo-icon">☀️</div>
+            <span>可再生能源管理系統</span>
+        </div>
+        <div class="nav-controls">
+            <button class="btn-toggle" onclick="toggleDarkMode()">
+                <span id="theme-toggle">🌙</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <!-- 左側邊欄 -->
+        <div class="sidebar">
+            <!-- 園區能源統計 -->
+            <div class="section">
+                <div class="section-title">⚡ 園區能源統計</div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-label">可再生能源發電</div>
+                        <div class="stat-icon">☀️</div>
+                    </div>
+                    <div class="stat-value" id="renewable-power">0</div>
+                    <div class="stat-unit">kW</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-label">今日發電量</div>
+                        <div class="stat-icon">📊</div>
+                    </div>
+                    <div class="stat-value" id="renewable-energy">0</div>
+                    <div class="stat-unit">kWh</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-label">電網購電</div>
+                        <div class="stat-icon">🔌</div>
+                    </div>
+                    <div class="stat-value" id="grid-power">0</div>
+                    <div class="stat-unit">kW</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-label">綠色能源占比</div>
+                        <div class="stat-icon">🌱</div>
+                    </div>
+                    <div class="stat-value" id="renewable-percent">0%</div>
+                    <div class="stat-unit">可再生能源</div>
+                </div>
+            </div>
+
+            <!-- 碳排減少統計 -->
+            <div class="section">
+                <div class="section-title">🌍 碳排減少統計</div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-label">實際碳排</div>
+                        <div class="stat-icon">📈</div>
+                    </div>
+                    <div class="stat-value" id="actual-carbon">0</div>
+                    <div class="stat-unit">kg CO₂</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-label">若無可再生能源</div>
+                        <div class="stat-icon">📉</div>
+                    </div>
+                    <div class="stat-value" id="grid-carbon">0</div>
+                    <div class="stat-unit">kg CO₂</div>
+                </div>
+
+                <div class="stat-card" style="border-color: #10b981; background: #f0fdf4;">
+                    <div class="stat-header">
+                        <div class="stat-label">減少碳排量</div>
+                        <div class="stat-icon">✅</div>
+                    </div>
+                    <div class="stat-value" style="color: #10b981;" id="carbon-saved">0</div>
+                    <div class="stat-unit">kg CO₂（節省）</div>
+                </div>
+            </div>
+
+            <!-- 能源設備管理 -->
+            <div class="section">
+                <div class="section-title">⚙️ 能源設備</div>
+                <div class="info-box">
+                    💡 點擊「+」按鈕添加可再生能源設備
+                </div>
+                <div id="device-list"></div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="showAddDeviceModal()">
+                    ➕ 添加設備
+                </button>
+            </div>
+        </div>
+
+        <!-- 主內容區 -->
+        <div class="content">
+            <!-- 標籤頁 -->
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('overview')">📊 概覽</button>
+                <button class="tab-btn" onclick="switchTab('details')">📈 詳細數據</button>
+                <button class="tab-btn" onclick="switchTab('history')">📜 歷史記錄</button>
+            </div>
+
+            <!-- 概覽標籤 -->
+            <div id="overview" class="tab-content active">
+                <div class="section">
+                    <div class="section-title">🔋 能源組成</div>
+                    <div class="energy-mix-container">
+                        <div class="energy-type-box">
+                            <div class="energy-type-icon">☀️</div>
+                            <div class="energy-type-name">太陽能</div>
+                            <div class="energy-type-value" id="solar-value">0</div>
+                            <div class="energy-type-percent" id="solar-percent">0%</div>
+                        </div>
+                        <div class="energy-type-box">
+                            <div class="energy-type-icon">💨</div>
+                            <div class="energy-type-name">風電</div>
+                            <div class="energy-type-value" id="wind-value">0</div>
+                            <div class="energy-type-percent" id="wind-percent">0%</div>
+                        </div>
+                        <div class="energy-type-box">
+                            <div class="energy-type-icon">💧</div>
+                            <div class="energy-type-name">水力</div>
+                            <div class="energy-type-value" id="hydro-value">0</div>
+                            <div class="energy-type-percent" id="hydro-percent">0%</div>
+                        </div>
+                        <div class="energy-type-box">
+                            <div class="energy-type-icon">🔌</div>
+                            <div class="energy-type-name">電網購電</div>
+                            <div class="energy-type-value" id="grid-value">0</div>
+                            <div class="energy-type-percent" id="grid-percent">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">🌍 碳排減少對比</div>
+                    <div class="comparison-grid">
+                        <div class="comparison-box actual">
+                            <div class="comparison-label">實際碳排</div>
+                            <div class="comparison-value" id="actual-carbon-compare">0</div>
+                            <div class="comparison-unit">kg CO₂</div>
+                        </div>
+                        <div class="comparison-box grid-only">
+                            <div class="comparison-label">若全用電網電</div>
+                            <div class="comparison-value" id="grid-carbon-compare">0</div>
+                            <div class="comparison-unit">kg CO₂</div>
+                        </div>
+                        <div class="comparison-box saved">
+                            <div class="comparison-label">減少碳排</div>
+                            <div class="comparison-value" id="carbon-saved-compare">0</div>
+                            <div class="comparison-unit">kg CO₂ ↓</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📊 能源效率指標</div>
+                    <div class="chart-card">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div>
+                                <div style="font-size: 12px; color: #999; margin-bottom: 8px;">可再生能源占比</div>
+                                <div style="font-size: 28px; font-weight: bold; color: #10b981;" id="renewable-percent-large">0%</div>
+                                <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; margin-top: 8px; overflow: hidden;">
+                                    <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #22c55e);" id="renewable-bar"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: #999; margin-bottom: 8px;">碳排減少比例</div>
+                                <div style="font-size: 28px; font-weight: bold; color: #10b981;" id="carbon-reduce-percent">0%</div>
+                                <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; margin-top: 8px; overflow: hidden;">
+                                    <div style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #22c55e);" id="carbon-reduce-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 詳細數據標籤 -->
+            <div id="details" class="tab-content">
+                <div class="section">
+                    <div class="section-title">⚡ 詳細能源數據</div>
+                    <div class="chart-card">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>設備名稱</th>
+                                    <th>類型</th>
+                                    <th>當前功率</th>
+                                    <th>容量</th>
+                                    <th>效率</th>
+                                </tr>
+                            </thead>
+                            <tbody id="details-table">
+                                <tr><td colspan="5" style="text-align: center; color: #999;">暫無設備</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📊 碳排詳細信息</div>
+                    <div class="chart-card">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>項目</th>
+                                    <th>數值</th>
+                                    <th>說明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>總用電量</strong></td>
+                                    <td id="total-energy">0 kWh</td>
+                                    <td>園區總用電</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>可再生能源發電</strong></td>
+                                    <td id="renewable-energy-detail">0 kWh</td>
+                                    <td>清潔能源</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>電網購電</strong></td>
+                                    <td id="grid-energy">0 kWh</td>
+                                    <td>傳統電網</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>實際碳排係數</strong></td>
+                                    <td id="actual-carbon-coef">0.00 kg CO₂/kWh</td>
+                                    <td>加權平均</td>
+                                </tr>
+                                <tr style="background: #f0fdf4; font-weight: bold;">
+                                    <td><strong style="color: #10b981;">減少的碳排排放</strong></td>
+                                    <td style="color: #10b981;" id="avoided-carbon">0 kg CO₂</td>
+                                    <td style="color: #10b981;">等同於減少...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">🌱 環保當量</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="chart-card" style="padding: 16px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 12px; color: #999; margin-bottom: 8px;">相當於植樹</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #10b981;" id="tree-count">0</div>
+                                <div style="font-size: 12px; color: #999;">棵樹吸收的碳量</div>
+                            </div>
+                        </div>
+                        <div class="chart-card" style="padding: 16px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 12px; color: #999; margin-bottom: 8px;">相當於汽車行駛</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #10b981;" id="car-km">0</div>
+                                <div style="font-size: 12px; color: #999;">公里減少的排放</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 歷史記錄標籤 -->
+            <div id="history" class="tab-content">
+                <div class="section">
+                    <div class="section-title">📜 發電量歷史記錄</div>
+                    <div class="chart-card">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>時間</th>
+                                    <th>設備</th>
+                                    <th>發電功率</th>
+                                    <th>發電量</th>
+                                    <th>減少碳排</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table">
+                                <tr><td colspan="5" style="text-align: center; color: #999;">暫無記錄</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📈 每日統計</div>
+                    <div class="chart-card">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>可再生能源</th>
+                                    <th>電網購電</th>
+                                    <th>減少碳排</th>
+                                </tr>
+                            </thead>
+                            <tbody id="daily-table">
+                                <tr><td colspan="4" style="text-align: center; color: #999;">暫無數據</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加設備模態 -->
+    <div class="modal" id="device-modal">
+        <div class="modal-content">
+            <div class="modal-title">添加可再生能源設備</div>
+            
+            <div class="form-group">
+                <label class="form-label">設備類型</label>
+                <select class="form-select" id="device-type">
+                    <option value="solar">☀️ 太陽能光伏</option>
+                    <option value="wind">💨 風力發電</option>
+                    <option value="hydro">💧 水力發電</option>
+                    <option value="other">⚡ 其他可再生</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">設備名稱</label>
+                <input type="text" class="form-input" id="device-name" placeholder="例：屋頂太陽能板 1-A 區">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">裝機容量 (kW)</label>
+                <input type="number" class="form-input" id="device-capacity" value="10" min="0.1" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">當前發電功率 (kW)</label>
+                <input type="number" class="form-input" id="device-power" value="5" min="0" step="0.1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">碳排係數 (kg CO₂/kWh)</label>
+                <input type="number" class="form-input" id="device-carbon-coef" value="0.02" min="0" step="0.01">
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="saveDevice()">💾 保存</button>
+                <button class="btn btn-secondary" onclick="closeDeviceModal()">✕ 取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 數據存儲
+        let devices = JSON.parse(localStorage.getItem('renewableDevices')) || [];
+        let energyHistory = JSON.parse(localStorage.getItem('energyHistory')) || [];
+        let totalEnergyUsage = 15000; // kWh 模擬總用電
+        let gridCarbonCoef = 0.5; // 電網碳排係數
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            loadDevices();
+            updateStats();
+            generateHistoryData();
+            
+            // 每 5 秒更新一次數據
+            setInterval(() => {
+                updateDevicePower();
+                updateStats();
+            }, 5000);
+        });
+
+        // 深浚模式
+        function initDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark');
+                document.getElementById('theme-toggle').textContent = '☀️';
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // 設備管理
+        function loadDevices() {
+            const list = document.getElementById('device-list');
+            if (devices.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999; font-size: 12px;">暫無設備</div>';
+                return;
+            }
+
+            list.innerHTML = devices.map(device => {
+                const icons = {
+                    solar: '☀️',
+                    wind: '💨',
+                    hydro: '💧',
+                    other: '⚡'
+                };
+                const percent = (device.power / device.capacity * 100).toFixed(0);
+                return `
+                    <div class="device-card">
+                        <div class="device-header">
+                            <div class="device-name">${icons[device.type]} ${device.name}</div>
+                            <div class="device-actions">
+                                <button class="btn-small" onclick="editDevice('${device.id}')">✏️</button>
+                                <button class="btn-small" onclick="deleteDevice('${device.id}')">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="device-stats">
+                            <div class="device-stat">
+                                <div class="device-stat-label">發電功率</div>
+                                <div class="device-stat-value">${device.power.toFixed(1)} kW</div>
+                            </div>
+                            <div class="device-stat">
+                                <div class="device-stat-label">容量</div>
+                                <div class="device-stat-value">${device.capacity} kW</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percent}%"></div>
+                        </div>
+                        <div style="font-size: 11px; color: #999; margin-top: 4px; text-align: right;">效率 ${percent}%</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showAddDeviceModal() {
+            document.getElementById('device-type').value = 'solar';
+            document.getElementById('device-name').value = '';
+            document.getElementById('device-capacity').value = '10';
+            document.getElementById('device-power').value = '5';
+            document.getElementById('device-carbon-coef').value = '0.02';
+            document.getElementById('device-modal').classList.add('show');
+        }
+
+        function editDevice(id) {
+            const device = devices.find(d => d.id === id);
+            if (!device) return;
+            
+            document.getElementById('device-type').value = device.type;
+            document.getElementById('device-name').value = device.name;
+            document.getElementById('device-capacity').value = device.capacity;
+            document.getElementById('device-power').value = device.power;
+            document.getElementById('device-carbon-coef').value = device.carbonCoef;
+            document.getElementById('device-modal').classList.add('show');
+            document.getElementById('device-modal').dataset.editId = id;
+        }
+
+        function saveDevice() {
+            const editId = document.getElementById('device-modal').dataset.editId;
+            const device = {
+                id: editId || 'device_' + Date.now(),
+                type: document.getElementById('device-type').value,
+                name: document.getElementById('device-name').value || '可再生能源設備',
+                capacity: parseFloat(document.getElementById('device-capacity').value) || 10,
+                power: parseFloat(document.getElementById('device-power').value) || 0,
+                carbonCoef: parseFloat(document.getElementById('device-carbon-coef').value) || 0.02,
+                createdAt: new Date().toISOString()
+            };
+
+            if (editId) {
+                const index = devices.findIndex(d => d.id === editId);
+                if (index >= 0) devices[index] = device;
+                delete document.getElementById('device-modal').dataset.editId;
+            } else {
+                devices.push(device);
+            }
+
+            saveDevices();
+            loadDevices();
+            closeDeviceModal();
+            updateStats();
+        }
+
+        function deleteDevice(id) {
+            if (confirm('確定要刪除此設備嗎？')) {
+                devices = devices.filter(d => d.id !== id);
+                saveDevices();
+                loadDevices();
+                updateStats();
+            }
+        }
+
+        function saveDevices() {
+            localStorage.setItem('renewableDevices', JSON.stringify(devices));
+        }
+
+        function closeDeviceModal() {
+            document.getElementById('device-modal').classList.remove('show');
+        }
+
+        // 更新設備功率（模擬）
+        function updateDevicePower() {
+            devices.forEach(device => {
+                const variation = (Math.random() - 0.5) * device.capacity * 0.4;
+                device.power = Math.max(0, Math.min(device.capacity, device.power + variation));
+            });
+            loadDevices();
+        }
+
+        // 統計更新
+        function updateStats() {
+            // 計算可再生能源總發電
+            let totalRenewablePower = 0;
+            let totalRenewableEnergy = 0;
+            let solarEnergy = 0, windEnergy = 0, hydroEnergy = 0;
+
+            devices.forEach(device => {
+                totalRenewablePower += device.power || 0;
+                const energy = (device.power || 0) * 0.1; // 簡化計算
+                totalRenewableEnergy += energy;
+
+                if (device.type === 'solar') solarEnergy += energy;
+                else if (device.type === 'wind') windEnergy += energy;
+                else if (device.type === 'hydro') hydroEnergy += energy;
+            });
+
+            // 電網購電
+            const gridEnergy = Math.max(0, totalEnergyUsage - totalRenewableEnergy);
+            const renewablePercent = totalEnergyUsage > 0 ? (totalRenewableEnergy / totalEnergyUsage * 100).toFixed(1) : 0;
+
+            // 碳排計算
+            let actualCarbon = 0;
+            devices.forEach(device => {
+                const energy = (device.power || 0) * 0.1;
+                actualCarbon += energy * (device.carbonCoef || 0.02);
+            });
+            actualCarbon += gridEnergy * gridCarbonCoef;
+
+            const gridOnlyCarbon = totalEnergyUsage * gridCarbonCoef;
+            const carbonSaved = Math.max(0, gridOnlyCarbon - actualCarbon);
+            const carbonPercent = gridOnlyCarbon > 0 ? (carbonSaved / gridOnlyCarbon * 100).toFixed(1) : 0;
+
+            // 更新左側邊欄
+            document.getElementById('renewable-power').textContent = totalRenewablePower.toFixed(1);
+            document.getElementById('renewable-energy').textContent = totalRenewableEnergy.toFixed(1);
+            document.getElementById('grid-power').textContent = (totalEnergyUsage / 24 - totalRenewablePower).toFixed(1);
+            document.getElementById('renewable-percent').textContent = renewablePercent + '%';
+            document.getElementById('actual-carbon').textContent = actualCarbon.toFixed(2);
+            document.getElementById('grid-carbon').textContent = gridOnlyCarbon.toFixed(2);
+            document.getElementById('carbon-saved').textContent = carbonSaved.toFixed(2);
+
+            // 更新概覽標籤
+            const totalPower = totalEnergyUsage / 24;
+            document.getElementById('solar-value').textContent = solarEnergy.toFixed(1) + ' kWh';
+            document.getElementById('solar-percent').textContent = (solarEnergy / totalRenewableEnergy * 100).toFixed(0) + '%';
+            document.getElementById('wind-value').textContent = windEnergy.toFixed(1) + ' kWh';
+            document.getElementById('wind-percent').textContent = (windEnergy / totalRenewableEnergy * 100).toFixed(0) + '%';
+            document.getElementById('hydro-value').textContent = hydroEnergy.toFixed(1) + ' kWh';
+            document.getElementById('hydro-percent').textContent = (hydroEnergy / totalRenewableEnergy * 100).toFixed(0) + '%';
+            document.getElementById('grid-value').textContent = gridEnergy.toFixed(1) + ' kWh';
+            document.getElementById('grid-percent').textContent = ((gridEnergy / totalEnergyUsage) * 100).toFixed(0) + '%';
+
+            // 更新碳排對比
+            document.getElementById('actual-carbon-compare').textContent = actualCarbon.toFixed(0);
+            document.getElementById('grid-carbon-compare').textContent = gridOnlyCarbon.toFixed(0);
+            document.getElementById('carbon-saved-compare').textContent = carbonSaved.toFixed(0);
+
+            // 更新進度條
+            document.getElementById('renewable-bar').style.width = renewablePercent + '%';
+            document.getElementById('renewable-percent-large').textContent = renewablePercent + '%';
+            document.getElementById('carbon-reduce-percent').textContent = carbonPercent + '%';
+            document.getElementById('carbon-reduce-bar').style.width = carbonPercent + '%';
+
+            // 更新詳細數據
+            updateDetailsTab(actualCarbon, gridOnlyCarbon, carbonSaved, totalRenewableEnergy, gridEnergy);
+
+            // 環保當量
+            const treeCount = Math.round(carbonSaved / 20); // 一棵樹吸收 20kg CO₂/年
+            const carKm = Math.round(carbonSaved / 0.25); // 汽車每公里排放 0.25kg CO₂
+            document.getElementById('tree-count').textContent = treeCount;
+            document.getElementById('car-km').textContent = carKm;
+        }
+
+        function updateDetailsTab(actual, grid, saved, renewable, gridEnergy) {
+            // 詳細數據表
+            const detailsHtml = devices.map(device => `
+                <tr>
+                    <td>${device.name}</td>
+                    <td>${device.type}</td>
+                    <td>${device.power.toFixed(1)} kW</td>
+                    <td>${device.capacity} kW</td>
+                    <td>${(device.power / device.capacity * 100).toFixed(0)}%</td>
+                </tr>
+            `).join('');
+            document.getElementById('details-table').innerHTML = detailsHtml || '<tr><td colspan="5" style="text-align: center; color: #999;">暫無設備</td></tr>';
+
+            // 碳排詳細信息
+            document.getElementById('total-energy').textContent = totalEnergyUsage.toFixed(0) + ' kWh';
+            document.getElementById('renewable-energy-detail').textContent = renewable.toFixed(1) + ' kWh';
+            document.getElementById('grid-energy').textContent = gridEnergy.toFixed(1) + ' kWh';
+            document.getElementById('actual-carbon-coef').textContent = (actual / totalEnergyUsage).toFixed(2) + ' kg CO₂/kWh';
+            document.getElementById('avoided-carbon').textContent = saved.toFixed(1) + ' kg CO₂';
+        }
+
+        function generateHistoryData() {
+            // 生成模擬歷史數據
+            const history = [];
+            const today = new Date();
+            
+            for (let i = 0; i < 30; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                
+                devices.forEach(device => {
+                    const dailyEnergy = device.capacity * (4 + Math.random() * 4);
+                    const carbonSaved = dailyEnergy * (gridCarbonCoef - device.carbonCoef);
+                    history.push({
+                        date: date.toISOString().split('T')[0],
+                        device: device.name,
+                        power: device.power,
+                        energy: dailyEnergy,
+                        carbon: carbonSaved
+                    });
+                });
+            }
+
+            energyHistory = history;
+            localStorage.setItem('energyHistory', JSON.stringify(history));
+            updateHistoryTables();
+        }
+
+        function updateHistoryTables() {
+            // 發電量歷史
+            const historyHtml = energyHistory.slice(0, 20).map(record => `
+                <tr>
+                    <td>${record.date}</td>
+                    <td>${record.device}</td>
+                    <td>${record.power.toFixed(1)} kW</td>
+                    <td>${record.energy.toFixed(2)} kWh</td>
+                    <td style="color: #10b981;">${record.carbon.toFixed(2)} kg</td>
+                </tr>
+            `).join('');
+            document.getElementById('history-table').innerHTML = historyHtml || '<tr><td colspan="5">暫無記錄</td></tr>';
+
+            // 每日統計
+            const dailyStats = {};
+            energyHistory.forEach(record => {
+                if (!dailyStats[record.date]) {
+                    dailyStats[record.date] = { renewable: 0, grid: 0, carbon: 0 };
+                }
+                dailyStats[record.date].renewable += record.energy;
+                dailyStats[record.date].carbon += record.carbon;
+            });
+
+            const dailyHtml = Object.entries(dailyStats).slice(0, 15).map(([date, data]) => `
+                <tr>
+                    <td>${date}</td>
+                    <td>${data.renewable.toFixed(1)} kWh</td>
+                    <td>${(totalEnergyUsage / 30 - data.renewable).toFixed(1)} kWh</td>
+                    <td style="color: #10b981; font-weight: bold;">${data.carbon.toFixed(1)} kg</td>
+                </tr>
+            `).join('');
+            document.getElementById('daily-table').innerHTML = dailyHtml || '<tr><td colspan="4">暫無數據</td></tr>';
+        }
+
+        // 標籤頁切換
+        function switchTab(tabName) {
+            // 隱藏所有標籤
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            // 顯示選中的標籤
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 模態事件監聽
+        document.getElementById('device-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'device-modal') closeDeviceModal();
+        });
+    </script>
+</body>
+</html>

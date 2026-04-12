@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp 'D:/Google Drive/Git2/EMS/elitegets-for-windows/elitegets/*.html' 'D:/Google Drive/Git2/EMS/frontend/')",
+      "Bash(cp 'D:/Google Drive/Git2/EMS/elitegets-for-windows/elitegets/*.js' 'D:/Google Drive/Git2/EMS/frontend/')",
+      "Bash(cp 'D:/Google Drive/Git2/EMS/elitegets-for-windows/elitegets/*.md' 'D:/Google Drive/Git2/EMS/docs/')",
+      "Bash(cp 'D:/Google Drive/Git2/EMS/elitegets-for-windows/elitegets/*.txt' 'D:/Google Drive/Git2/EMS/docs/')",
+      "Bash(docker --version)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose --version)",
+      "Bash(python -m http.server 8080)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/meter-system-version-selector.html)",
+      "Bash(ls \"D:/Google Drive/Git2/EMS/frontend/\"*.html)",
+      "Bash(wc -l \"D:/Google Drive/Git2/EMS/frontend/\"*.html)"
+    ]
+  }
+}

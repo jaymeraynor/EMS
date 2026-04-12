@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能源管理平台 - 完整版面展示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 50%, #e0f2fe 100%);
+            transition: all 0.3s ease;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a365d 100%);
+            color: #ffffff;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 頂部導航 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .navbar {
+            background: rgba(30, 41, 59, 0.95);
+            border-bottom-color: #475569;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .btn-toggle:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark .btn-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        body.dark select {
+            background: #1e293b;
+            border-color: #475569;
+            color: white;
+        }
+
+        /* 側邊欄 - 修復版本 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 80px;
+            bottom: 0;
+            width: 280px;
+            background: white;
+            border-right: 2px solid #e5e7eb;
+            padding: 24px;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 50;
+        }
+
+        body.dark .sidebar {
+            background: #1e293b;
+            border-right-color: #475569;
+        }
+
+        /* 手機版：側邊欄滑出來，蓋在內容上 */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                transform: translateX(-100%);
+                width: 280px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+
+        /* 桌面版：側邊欄固定在左邊 */
+        @media (min-width: 769px) {
+            .sidebar {
+                position: fixed;
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .tab-button {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: 12px;
+            background: none;
+            cursor: pointer;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        body.dark .tab-button {
+            color: #ccc;
+        }
+
+        .tab-button:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        body.dark .tab-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        /* 遮罩層 - 手機版才顯示 */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            display: none;
+            z-index: 40;
+            top: 80px;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        @media (min-width: 769px) {
+            .overlay {
+                display: none !important;
+            }
+        }
+
+        /* 主內容區 - 修復版本 */
+        .main-content {
+            flex: 1;
+            margin-top: 80px;
+            padding: 32px;
+            max-width: none;
+        }
+
+        /* 手機版：主內容全寬，不需要 margin */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 16px;
+            }
+        }
+
+        /* 桌面版：主內容有左邊距 */
+        @media (min-width: 769px) {
+            .main-content {
+                margin-left: 280px;
+                padding: 32px;
+            }
+        }
+
+        .content-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .content-subtitle {
+            color: #999;
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+
+        body.dark .content-subtitle {
+            color: #aaa;
+        }
+
+        /* 指標卡片網格 */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .metric-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .metric-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        body.dark .metric-label {
+            color: #aaa;
+        }
+
+        .metric-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-unit {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        body.dark .progress-bar {
+            background: #334155;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* 圖表區域 */
+        .charts-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 1200px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        body.dark .chart-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .chart-placeholder {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        body.dark .chart-placeholder {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2));
+            color: #aaa;
+        }
+
+        /* 樓宇網格 */
+        .buildings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .building-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .building-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .building-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .building-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .building-power {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .building-temp {
+            font-size: 12px;
+            color: #999;
+        }
+
+        body.dark .building-temp {
+            color: #aaa;
+        }
+
+        /* 告警面板 */
+        .alerts-container {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        body.dark .alerts-container {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .alerts-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .alert-item {
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            border-left: 4px solid;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .alert-critical {
+            background: rgba(220, 38, 38, 0.1);
+            border-left-color: #dc2626;
+        }
+
+        .alert-warning {
+            background: rgba(249, 115, 22, 0.1);
+            border-left-color: #f97316;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: #3b82f6;
+        }
+
+        body.dark .alert-critical {
+            background: rgba(220, 38, 38, 0.2);
+        }
+
+        body.dark .alert-warning {
+            background: rgba(249, 115, 22, 0.2);
+        }
+
+        body.dark .alert-info {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .alert-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-building {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .alert-message {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        body.dark .alert-message {
+            color: #aaa;
+        }
+
+        .btn-confirm {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn-confirm:hover {
+            background: #f0f0f0;
+        }
+
+        body.dark .btn-confirm {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        body.dark .btn-confirm:hover {
+            background: #475569;
+        }
+
+        /* 標籤頁 */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 表格樣式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        body.dark th, body.dark td {
+            border-bottom-color: #475569;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+        }
+
+        body.dark th {
+            background: #334155;
+        }
+
+        /* 功能清單 */
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .feature-item {
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        body.dark .feature-item {
+            background: #334155;
+            border-left-color: #06b6d4;
+        }
+
+        .feature-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 13px;
+            color: #666;
+        }
+
+        body.dark .feature-desc {
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="navbar">
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <div class="logo-text">能源管理平台</div>
+        </div>
+        <div class="nav-controls">
+            <select id="language">
+                <option value="zh-TW">繁體中文</option>
+                <option value="en-US">English</option>
+            </select>
+            <button class="btn-toggle" onclick="toggleDarkMode()">
+                <span id="theme-toggle">🌙</span>
+            </button>
+            <button class="btn-toggle" onclick="toggleSidebar()">
+                <span id="menu-toggle">☰</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 遮罩層（手機版才顯示） -->
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 側邊欄 -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-title">📑 功能導航</div>
+            <button class="tab-button active" onclick="switchTab(event, 'dashboard')">📊 儀表板</button>
+            <button class="tab-button" onclick="switchTab(event, 'reports')">📈 報表分析</button>
+            <button class="tab-button" onclick="switchTab(event, 'heatmap')">🔲 3D熱力圖</button>
+            <button class="tab-button" onclick="switchTab(event, 'prediction')">🤖 AI預測</button>
+            <button class="tab-button" onclick="switchTab(event, 'alerts')">🔔 告警系統</button>
+            <button class="tab-button" onclick="switchTab(event, 'admin')">👤 管理後台</button>
+            <button class="tab-button" onclick="switchTab(event, 'integration')">🔗 企業集成</button>
+            <button class="tab-button" onclick="switchTab(event, 'mobile')">📱 行動應用</button>
+        </div>
+
+        <!-- 主內容 -->
+        <div class="main-content">
+
+            <!-- ========== 儀表板 ========== -->
+            <div id="dashboard" class="tab-content active">
+                <div class="content-title">📊 儀表板</div>
+                <div class="content-subtitle">實時園區能源監控系統</div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">🔵 4個關鍵指標卡片</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-label">實時功率</div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4); color: white;">⚡</div>
+                        </div>
+                        <div class="metric-value" id="realtime-power">380</div>
+                        <div class="metric-unit">kW (每2秒更新)</div>
+                        <div class="progress-bar"><div class="progress-fill" id="power-progress" style="width: 76%;"></div></div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-label">日均消耗</div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white;">📊</div>
+                        </div>
+                        <div class="metric-value">7,680</div>
+                        <div class="metric-unit">kWh</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 96%; background: linear-gradient(90deg, #06b6d4, #3b82f6);"></div></div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-label">碳排減少</div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #10b981, #22c55e); color: white;">♻️</div>
+                        </div>
+                        <div class="metric-value">2.1</div>
+                        <div class="metric-unit">t CO₂</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 84%; background: linear-gradient(90deg, #10b981, #22c55e);"></div></div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-label">成本節省</div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #fbbf24, #f97316); color: white;">💰</div>
+                        </div>
+                        <div class="metric-value">¥18.2K</div>
+                        <div class="metric-unit">本月</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 91%; background: linear-gradient(90deg, #fbbf24, #f97316);"></div></div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 32px 0 16px 0; font-size: 18px;">📈 數據可視化區域</h3>
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-title">📈 24小時實時功率曲線</div>
+                        <div class="chart-placeholder">
+                            <span style="font-size: 48px;">📊</span>
+                            <div>實時功率數據、預測曲線、對標線</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title">⚡ 能源結構分布</div>
+                        <div style="text-align: center; margin: 24px 0;">
+                            <div style="font-size: 60px; margin: 12px 0;">◐</div>
+                            <div style="font-weight: bold;">65% 電網 / 25% 光伏 / 10% 儲能</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 32px 0 16px 0; font-size: 18px;">🏢 5座樓宇實時監控網格</h3>
+                <div class="buildings-grid">
+                    <div class="building-card">
+                        <div class="building-name">A1寫字樓</div>
+                        <div class="building-power">85 kW</div>
+                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; margin: 8px 0; overflow: hidden;">
+                            <div style="width: 57%; height: 100%; background: #3b82f6;"></div>
+                        </div>
+                        <div class="building-temp">✓ 正常 | 22.5°C</div>
+                    </div>
+
+                    <div class="building-card">
+                        <div class="building-name">B2數據中心</div>
+                        <div class="building-power">120 kW</div>
+                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; margin: 8px 0; overflow: hidden;">
+                            <div style="width: 80%; height: 100%; background: #f97316;"></div>
+                        </div>
+                        <div class="building-temp">⚠ 警告 | 26.8°C</div>
+                    </div>
+
+                    <div class="building-card">
+                        <div class="building-name">C3生產車間</div>
+                        <div class="building-power">145 kW</div>
+                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; margin: 8px 0; overflow: hidden;">
+                            <div style="width: 81%; height: 100%; background: #dc2626;"></div>
+                        </div>
+                        <div class="building-temp">✕ 超載 | 28.2°C</div>
+                    </div>
+
+                    <div class="building-card">
+                        <div class="building-name">D4商業中心</div>
+                        <div class="building-power">92 kW</div>
+                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; margin: 8px 0; overflow: hidden;">
+                            <div style="width: 66%; height: 100%; background: #3b82f6;"></div>
+                        </div>
+                        <div class="building-temp">✓ 正常 | 23.1°C</div>
+                    </div>
+
+                    <div class="building-card">
+                        <div class="building-name">E5倉儲區</div>
+                        <div class="building-power">62 kW</div>
+                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; margin: 8px 0; overflow: hidden;">
+                            <div style="width: 52%; height: 100%; background: #3b82f6;"></div>
+                        </div>
+                        <div class="building-temp">✓ 正常 | 20.3°C</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 32px 0 16px 0; font-size: 18px;">🔔 實時告警面板</h3>
+                <div class="alerts-container">
+                    <div class="alerts-title">🔔 實時告警 (3)</div>
+                    
+                    <div class="alert-item alert-critical">
+                        <div class="alert-icon">🔴</div>
+                        <div class="alert-content">
+                            <div class="alert-building">C3生產車間</div>
+                            <div class="alert-message">負荷超過額定值85%，請立即處理</div>
+                        </div>
+                        <button class="btn-confirm">確認</button>
+                    </div>
+
+                    <div class="alert-item alert-warning">
+                        <div class="alert-icon">🟠</div>
+                        <div class="alert-content">
+                            <div class="alert-building">B2數據中心</div>
+                            <div class="alert-message">冷卻系統溫度異常升高</div>
+                        </div>
+                        <button class="btn-confirm">確認</button>
+                    </div>
+
+                    <div class="alert-item alert-info">
+                        <div class="alert-icon">🔵</div>
+                        <div class="alert-content">
+                            <div class="alert-building">A1寫字樓</div>
+                            <div class="alert-message">峰值時間段即將到來</div>
+                        </div>
+                        <button class="btn-confirm">確認</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 其他頁籤 ========== -->
+            <div id="reports" class="tab-content">
+                <div class="content-title">📈 報表分析</div>
+                <div class="content-subtitle">能源數據統計和深度分析</div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">📊 同環比分析數據</h3>
+                <div class="metrics-grid" style="margin-bottom: 24px;">
+                    <div class="metric-card">
+                        <div class="metric-label">同比增長</div>
+                        <div class="metric-value" style="color: #10b981;">↓ 8%</div>
+                        <div class="metric-unit">較去年同期下降</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">環比增長</div>
+                        <div class="metric-value" style="color: #f97316;">↑ 3%</div>
+                        <div class="metric-unit">較上月上升</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">目標達成度</div>
+                        <div class="metric-value" style="color: #3b82f6;">102%</div>
+                        <div class="metric-unit">超額完成目標</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">📋 四大報表類型</h3>
+                <div class="features-list">
+                    <div class="feature-item">
+                        <div class="feature-title">📊 日報</div>
+                        <div class="feature-desc">每日統計、峰谷分析、趨勢預測</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-title">📈 週報</div>
+                        <div class="feature-desc">週度匯總、對標分析、優化建議</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-title">📊 月報</div>
+                        <div class="feature-desc">月度統計、深度分析、成本對標</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-title">📋 年報</div>
+                        <div class="feature-desc">年度統計、策略評估、投資回報</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="heatmap" class="tab-content">
+                <div class="content-title">🔲 3D建築熱力圖</div>
+                <div class="content-subtitle">實時能耗可視化、3D模型渲染、交互操作</div>
+
+                <div class="chart-card" style="padding: 40px; text-align: center;">
+                    <div style="font-size: 80px; margin-bottom: 16px;">🏗️</div>
+                    <div style="font-size: 24px; font-weight: bold; margin-bottom: 8px;">5座建築 3D模型展示</div>
+                    <div style="color: #999;">Three.js + React Three Fiber | 實時負荷渲染</div>
+                </div>
+            </div>
+
+            <div id="prediction" class="tab-content">
+                <div class="content-title">🤖 AI預測系統</div>
+                <div class="content-subtitle">LSTM深度學習、24小時預測、智慧優化建議</div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">📊 關鍵預測指標</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">今日峰值</div>
+                        <div class="metric-value">450</div>
+                        <div class="metric-unit">kW | 預計18:30</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">平均負荷</div>
+                        <div class="metric-value">320</div>
+                        <div class="metric-unit">kW | 置信度89%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">日耗能預估</div>
+                        <div class="metric-value">7,450</div>
+                        <div class="metric-unit">kWh | ±2.3%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="alerts" class="tab-content">
+                <div class="content-title">🔔 告警系統</div>
+                <div class="content-subtitle">三級告警管理、實時統計、告警確認、歷史記錄</div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">📊 告警統計儀表板</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card" style="background: rgba(220, 38, 38, 0.1);">
+                        <div class="metric-label">🔴 緊急告警</div>
+                        <div class="metric-value" style="color: #dc2626;">1</div>
+                    </div>
+                    <div class="metric-card" style="background: rgba(249, 115, 22, 0.1);">
+                        <div class="metric-label">🟠 警告告警</div>
+                        <div class="metric-value" style="color: #f97316;">2</div>
+                    </div>
+                    <div class="metric-card" style="background: rgba(59, 130, 246, 0.1);">
+                        <div class="metric-label">🔵 信息通知</div>
+                        <div class="metric-value" style="color: #3b82f6;">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin" class="tab-content">
+                <div class="content-title">👤 管理後台</div>
+                <div class="content-subtitle">用戶管理、角色分配、權限控制、系統監控</div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">📊 系統統計</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">👥 總用户</div>
+                        <div class="metric-value">12</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">📜 系統日誌</div>
+                        <div class="metric-value">1.2K</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">⚙️ 系統設置</div>
+                        <div class="metric-value">8</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">🔐 審計</div>
+                        <div class="metric-value">450</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="integration" class="tab-content">
+                <div class="content-title">🔗 企業集成</div>
+                <div class="content-subtitle">SAP、釘釘、企業微信、Slack、郵件、Web Hook</div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">🔗 集成平台連接狀態</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+                    <div style="padding: 20px; background: white; border: 2px solid #e5e7eb; border-radius: 12px; text-align: center; dark:background: #1e293b;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">🔗</div>
+                        <div style="font-weight: bold; margin-bottom: 8px;">SAP ERP</div>
+                        <div style="color: #10b981; font-weight: bold;">✓ 已連接</div>
+                    </div>
+                    <div style="padding: 20px; background: white; border: 2px solid #e5e7eb; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">📱</div>
+                        <div style="font-weight: bold; margin-bottom: 8px;">釘釘</div>
+                        <div style="color: #10b981; font-weight: bold;">✓ 已連接</div>
+                    </div>
+                    <div style="padding: 20px; background: white; border: 2px solid #e5e7eb; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">💬</div>
+                        <div style="font-weight: bold; margin-bottom: 8px;">企業微信</div>
+                        <div style="color: #10b981; font-weight: bold;">✓ 已連接</div>
+                    </div>
+                    <div style="padding: 20px; background: white; border: 2px solid #e5e7eb; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">⚡</div>
+                        <div style="font-weight: bold; margin-bottom: 8px;">Slack</div>
+                        <div style="color: #10b981; font-weight: bold;">✓ 已連接</div>
+                    </div>
+                    <div style="padding: 20px; background: white; border: 2px solid #e5e7eb; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">📧</div>
+                        <div style="font-weight: bold; margin-bottom: 8px;">郵件</div>
+                        <div style="color: #10b981; font-weight: bold;">✓ 已連接</div>
+                    </div>
+                    <div style="padding: 20px; background: white; border: 2px solid #e5e7eb; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 40px; margin-bottom: 12px;">🌐</div>
+                        <div style="font-weight: bold; margin-bottom: 8px;">WebHook</div>
+                        <div style="color: #10b981; font-weight: bold;">✓ 已連接</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mobile" class="tab-content">
+                <div class="content-title">📱 行動應用</div>
+                <div class="content-subtitle">PWA 離線支持、推送通知、主屏安裝、後台同步</div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">✨ PWA 應用功能</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">📡 離線支持</div>
+                        <div style="font-size: 24px; margin: 12px 0;">📡</div>
+                        <div class="metric-unit">無網絡仍可查看</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">🔔 推送通知</div>
+                        <div style="font-size: 24px; margin: 12px 0;">🔔</div>
+                        <div class="metric-unit">實時告警提醒</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">📱 主屏安裝</div>
+                        <div style="font-size: 24px; margin: 12px 0;">📱</div>
+                        <div class="metric-unit">一鍵添加到主屏</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">🔄 同步數據</div>
+                        <div style="font-size: 24px; margin: 12px 0;">🔄</div>
+                        <div class="metric-unit">後台自動同步</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let realTimePower = 380;
+        const isDarkMode = localStorage.getItem('darkMode') === 'true';
+        
+        if (isDarkMode) {
+            document.body.classList.add('dark');
+            document.getElementById('theme-toggle').textContent = '☀️';
+        }
+
+        setInterval(() => {
+            realTimePower = Math.max(200, Math.min(500, realTimePower + (Math.random() - 0.5) * 40));
+            document.getElementById('realtime-power').textContent = Math.round(realTimePower);
+            document.getElementById('power-progress').style.width = ((realTimePower / 500) * 100) + '%';
+        }, 2000);
+
+        function switchTab(event, tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // 在手機上點擊菜單後自動關閉側邊欄
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+    </script>
+</body>
+</html>

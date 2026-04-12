@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EliteGets 能源管理平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #4FC3F7;
+            --color-secondary: #9E8B7B;
+            --color-accent: #CDDC39;
+            --color-dark: #1a1a1a;
+            --color-light: #f5f5f5;
+            --color-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f5f5f5;
+            color: var(--color-dark);
+        }
+
+        body.dark {
+            background: #0f1419;
+            color: var(--color-white);
+        }
+
+        /* 頂部導航 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: auto;
+            background: #ffffff;
+            border-bottom: 4px solid var(--color-primary);
+            display: flex;
+            flex-direction: column;
+            padding: 12px 16px;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        body.dark .navbar {
+            background: #1a1f2e;
+        }
+
+        .navbar-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--color-primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            color: var(--color-primary);
+            font-weight: 900;
+            font-size: 14px;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border: 2px solid var(--color-primary);
+            border-radius: 12px;
+            font-size: 10px;
+        }
+
+        body.dark .user-badge {
+            background: #334155;
+        }
+
+        .user-name {
+            font-weight: bold;
+        }
+
+        .user-role {
+            color: var(--color-primary);
+            font-weight: bold;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 8px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .nav-item {
+            padding: 6px 12px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 11px;
+            color: #666;
+            transition: all 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        body.dark .nav-item {
+            color: #aaa;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        /* 主容器 */
+        .container {
+            margin-top: auto;
+            padding: 80px 16px 16px 16px;
+            max-width: 100%;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--color-primary);
+        }
+
+        /* 模塊容器 */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .module-card {
+            background: white;
+            border: 3px solid;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.dark .module-card {
+            background: #1e293b;
+        }
+
+        .module-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--color-card);
+        }
+
+        .module-card.electricity {
+            --color-card: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .module-card.ai {
+            --color-card: var(--color-secondary);
+            border-color: var(--color-secondary);
+        }
+
+        .module-card.renewable {
+            --color-card: var(--color-accent);
+            border-color: var(--color-accent);
+        }
+
+        .module-card.building {
+            --color-card: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .module-card.charging {
+            --color-card: var(--color-accent);
+            border-color: var(--color-accent);
+        }
+
+        .module-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .module-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .module-desc {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        body.dark .module-desc {
+            color: #aaa;
+        }
+
+        .module-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            background: var(--color-tag);
+            color: white;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .module-card.electricity .module-tag {
+            --color-tag: var(--color-primary);
+        }
+
+        .module-card.ai .module-tag {
+            --color-tag: var(--color-secondary);
+        }
+
+        .module-card.renewable .module-tag {
+            --color-tag: var(--color-accent);
+        }
+
+        .module-card.building .module-tag {
+            --color-tag: var(--color-primary);
+        }
+
+        .module-card.charging .module-tag {
+            --color-tag: var(--color-accent);
+        }
+
+        /* 儀表板區域 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        body.dark .dashboard-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        /* 圓餅圖 */
+        .pie-chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: auto;
+            margin-bottom: 12px;
+        }
+
+        .pie-chart-svg {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 8px;
+        }
+
+        .pie-label {
+            text-align: center;
+            z-index: 10;
+        }
+
+        .pie-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .pie-unit {
+            font-size: 9px;
+            color: #999;
+        }
+
+        .pie-legend {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            font-size: 11px;
+            width: 100%;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        /* 數據輪播 */
+        .carousel-container {
+            position: relative;
+            height: 100px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 12px;
+            overflow: hidden;
+            border: 2px solid #e5e7eb;
+            margin-bottom: 8px;
+        }
+
+        body.dark .carousel-container {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        .carousel-item {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 12px;
+            animation: slideIn 0.5s ease-in-out;
+        }
+
+        .carousel-item.hidden {
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .carousel-stat {
+            text-align: center;
+            flex: 1;
+        }
+
+        .carousel-label {
+            font-size: 10px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        body.dark .carousel-label {
+            color: #aaa;
+        }
+
+        .carousel-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin: 4px 0;
+        }
+
+        .carousel-unit {
+            font-size: 9px;
+            color: #999;
+        }
+
+        .carousel-controls {
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+        }
+
+        .carousel-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .carousel-dot.active {
+            background: var(--color-primary);
+            width: 10px;
+            border-radius: 2px;
+        }
+
+        /* 統計卡片 */
+        .stat-card {
+            padding: 12px;
+            background: white;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+            margin-bottom: 8px;
+        }
+
+        body.dark .stat-card {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #666;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        body.dark .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        /* 按鈕 */
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0288D1;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            border: 2px solid var(--color-primary);
+            color: var(--color-primary);
+            background: transparent;
+        }
+
+        body.dark .btn-outline:hover {
+            background: rgba(79, 195, 247, 0.1);
+        }
+
+        /* 快速導航 */
+        .quick-nav {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        /* 響應式 */
+        @media (min-width: 768px) {
+            .navbar {
+                height: 80px;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 32px;
+            }
+
+            .navbar-top {
+                margin-bottom: 0;
+                width: 100%;
+            }
+
+            .container {
+                padding: 80px 32px 32px 32px;
+            }
+
+            .modules-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 2fr 1fr 1fr;
+            }
+
+            .quick-nav {
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            }
+
+            .pie-chart-svg {
+                width: 180px;
+                height: 180px;
+            }
+
+            .section-title {
+                font-size: 20px;
+            }
+
+            .module-card {
+                padding: 20px;
+            }
+
+            .btn {
+                width: auto;
+                margin-bottom: 0;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 1600px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="navbar">
+        <div class="navbar-top">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <span class="logo-text">EliteGets</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="user-badge">
+                    <div class="user-name">王小明</div>
+                    <div class="user-role">管理員</div>
+                </div>
+                <button class="btn-toggle" onclick="toggleDarkMode()">
+                    <span id="theme-toggle">🌙</span>
+                </button>
+            </div>
+        </div>
+        <div class="nav-menu">
+            <button class="nav-item active" onclick="switchSection('overview')">📊 概覽</button>
+            <button class="nav-item" onclick="switchSection('electricity')">📄 電費</button>
+            <button class="nav-item" onclick="switchSection('ai')">🤖 AI</button>
+            <button class="nav-item" onclick="switchSection('renewable')">☀️ 能源</button>
+            <button class="nav-item" onclick="switchSection('building')">🏢 建築</button>
+            <button class="nav-item" onclick="switchSection('charging')">🔌 充電</button>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 概覽區域 -->
+        <div id="overview-section">
+            <div class="section">
+                <div class="section-title">🎯 能源管理模塊</div>
+                
+                <div class="modules-grid">
+                    <div class="module-card electricity" onclick="navigateTo('electricity-bill-carbon-calculator.html')">
+                        <div class="module-icon">📄</div>
+                        <div class="module-title">電費帳單</div>
+                        <div class="module-desc">輸入 12 月電費，計算碳排</div>
+                        <div class="module-tag">📊 數據</div>
+                    </div>
+
+                    <div class="module-card ai" onclick="navigateTo('ai-electricity-analyzer.html')">
+                        <div class="module-icon">🤖</div>
+                        <div class="module-title">AI 分析</div>
+                        <div class="module-desc">智能診斷用電，優化建議</div>
+                        <div class="module-tag">💡 智能</div>
+                    </div>
+
+                    <div class="module-card renewable" onclick="navigateTo('renewable-energy-detailed-system.html')">
+                        <div class="module-icon">☀️</div>
+                        <div class="module-title">可再生能源</div>
+                        <div class="module-desc">太陽能、風電發電統計</div>
+                        <div class="module-tag">🌱 發電</div>
+                    </div>
+
+                    <div class="module-card building" onclick="navigateTo('building-configuration-system.html')">
+                        <div class="module-icon">🏢</div>
+                        <div class="module-title">建築物配置</div>
+                        <div class="module-desc">園區管理、電錶監控</div>
+                        <div class="module-tag">⚡ 園區</div>
+                    </div>
+
+                    <div class="module-card charging" onclick="navigateTo('charging-station-pure.html')">
+                        <div class="module-icon">🔌</div>
+                        <div class="module-title">充電樁管理</div>
+                        <div class="module-desc">設備監控、成本分析</div>
+                        <div class="module-tag">⚡ 設備</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 儀表板區域 -->
+            <div class="section">
+                <div class="section-title">📈 實時監控</div>
+
+                <div class="dashboard-grid">
+                    <!-- 能源結構 -->
+                    <div class="dashboard-card">
+                        <div class="card-title">🔋 能源結構</div>
+                        <div class="pie-chart-container">
+                            <svg class="pie-chart-svg" viewBox="0 0 200 200">
+                                <circle cx="100" cy="100" r="80" fill="none" stroke="#4FC3F7" stroke-width="40" 
+                                    stroke-dasharray="201 314" stroke-dashoffset="0" 
+                                    transform="rotate(-90 100 100)"/>
+                                <circle cx="100" cy="100" r="80" fill="none" stroke="#9E8B7B" stroke-width="40" 
+                                    stroke-dasharray="38 314" stroke-dashoffset="-201"
+                                    transform="rotate(-90 100 100)"/>
+                                <circle cx="100" cy="100" r="80" fill="none" stroke="#CDDC39" stroke-width="40" 
+                                    stroke-dasharray="13 314" stroke-dashoffset="-239"
+                                    transform="rotate(-90 100 100)"/>
+                            </svg>
+                            <div class="pie-label">
+                                <div class="pie-value">80%</div>
+                                <div class="pie-unit">電網</div>
+                            </div>
+                        </div>
+                        <div class="pie-legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #4FC3F7;"></div>
+                                <span>電網 80%</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #9E8B7B;"></div>
+                                <span>太陽能 15%</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #CDDC39;"></div>
+                                <span>風電 3%</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #2C3E50;"></div>
+                                <span>其他 2%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 碳排分布 -->
+                    <div class="dashboard-card">
+                        <div class="card-title">🌍 碳排分布</div>
+                        <div class="carousel-container">
+                            <div class="carousel-item" id="carousel-1">
+                                <div class="carousel-stat">
+                                    <div class="carousel-label">年度碳排</div>
+                                    <div class="carousel-value">9,600</div>
+                                    <div class="carousel-unit">kg CO₂</div>
+                                </div>
+                                <div class="carousel-stat">
+                                    <div class="carousel-label">減少碳排</div>
+                                    <div class="carousel-value">1,440</div>
+                                    <div class="carousel-unit">kg CO₂</div>
+                                </div>
+                            </div>
+                            <div class="carousel-item hidden" id="carousel-2">
+                                <div class="carousel-stat">
+                                    <div class="carousel-label">相當於植樹</div>
+                                    <div class="carousel-value">480</div>
+                                    <div class="carousel-unit">棵樹</div>
+                                </div>
+                                <div class="carousel-stat">
+                                    <div class="carousel-label">汽車少跑</div>
+                                    <div class="carousel-value">38,400</div>
+                                    <div class="carousel-unit">公里</div>
+                                </div>
+                            </div>
+                            <div class="carousel-item hidden" id="carousel-3">
+                                <div class="carousel-stat">
+                                    <div class="carousel-label">年度電費</div>
+                                    <div class="carousel-value">49,680</div>
+                                    <div class="carousel-unit">元</div>
+                                </div>
+                                <div class="carousel-stat">
+                                    <div class="carousel-label">成本節省</div>
+                                    <div class="carousel-value">5,968</div>
+                                    <div class="carousel-unit">元/年</div>
+                                </div>
+                            </div>
+                            <div class="carousel-controls">
+                                <div class="carousel-dot active" onclick="showCarousel(0)"></div>
+                                <div class="carousel-dot" onclick="showCarousel(1)"></div>
+                                <div class="carousel-dot" onclick="showCarousel(2)"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 關鍵指標 -->
+                    <div class="dashboard-card">
+                        <div class="card-title">⚡ 指標</div>
+                        <div class="stat-card">
+                            <div class="stat-label">能源效率</div>
+                            <div class="stat-value">A 級</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">電費單價</div>
+                            <div class="stat-value">2.59</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">綠能占比</div>
+                            <div class="stat-value">20%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速導航 -->
+            <div class="section">
+                <div class="section-title">🚀 快速導航</div>
+                <div class="quick-nav">
+                    <button class="btn btn-primary" onclick="navigateTo('electricity-bill-carbon-calculator.html')">
+                        📊 電費分析
+                    </button>
+                    <button class="btn btn-primary" onclick="navigateTo('ai-electricity-analyzer.html')">
+                        🤖 AI 分析
+                    </button>
+                    <button class="btn btn-primary" onclick="navigateTo('renewable-energy-detailed-system.html')">
+                        ☀️ 可再生能源
+                    </button>
+                    <button class="btn btn-primary" onclick="navigateTo('building-configuration-system.html')">
+                        🏢 園區配置
+                    </button>
+                    <button class="btn btn-primary" onclick="navigateTo('charging-station-pure.html')">
+                        🔌 充電樁
+                    </button>
+                    <button class="btn btn-outline" onclick="navigateTo('admin-dashboard-pure.html')">
+                        🔧 後台管理
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="content-area"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initDarkMode();
+            startCarouselRotation();
+        });
+
+        function initDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark');
+                document.getElementById('theme-toggle').textContent = '☀️';
+            }
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        let carouselIndex = 0;
+        function showCarousel(index) {
+            const items = document.querySelectorAll('.carousel-item');
+            const dots = document.querySelectorAll('.carousel-dot');
+            
+            items.forEach(item => item.classList.add('hidden'));
+            dots.forEach(dot => dot.classList.remove('active'));
+            
+            items[index].classList.remove('hidden');
+            dots[index].classList.add('active');
+            
+            carouselIndex = index;
+        }
+
+        function nextCarousel() {
+            const items = document.querySelectorAll('.carousel-item');
+            const nextIndex = (carouselIndex + 1) % items.length;
+            showCarousel(nextIndex);
+        }
+
+        function startCarouselRotation() {
+            setInterval(nextCarousel, 5000);
+        }
+
+        function switchSection(section) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+    </script>
+</body>
+</html>

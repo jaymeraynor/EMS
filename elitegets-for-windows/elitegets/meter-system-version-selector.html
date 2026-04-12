@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EliteGets 電表系統 - 版本選擇</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #4FC3F7;
+            --color-secondary: #9E8B7B;
+            --color-accent: #CDDC39;
+            --color-dark: #1a1a1a;
+            --color-white: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f0f4f7 0%, #ffffff 50%, #f0f8ff 100%);
+            color: var(--color-dark);
+            padding: 40px 20px;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #0d1117 100%);
+            color: var(--color-white);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header-title {
+            font-size: 42px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: 18px;
+            color: #666;
+        }
+
+        body.dark .header-subtitle {
+            color: #aaa;
+        }
+
+        .versions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .version-card {
+            background: white;
+            border: 2px solid;
+            border-radius: 16px;
+            padding: 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.dark .version-card {
+            background: #1e293b;
+        }
+
+        .version-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
+        }
+
+        .version-card.advance {
+            border-color: var(--color-primary);
+        }
+
+        .version-card.pro {
+            border-color: var(--color-secondary);
+            border-width: 3px;
+        }
+
+        .version-card.ultimate {
+            border-color: var(--color-accent);
+        }
+
+        .version-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: white;
+        }
+
+        .version-card.advance .version-badge {
+            background: var(--color-primary);
+        }
+
+        .version-card.pro .version-badge {
+            background: var(--color-secondary);
+        }
+
+        .version-card.ultimate .version-badge {
+            background: var(--color-accent);
+        }
+
+        .version-name {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .version-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        body.dark .version-description {
+            color: #aaa;
+        }
+
+        .price {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin-bottom: 24px;
+        }
+
+        .version-card.pro .price {
+            color: var(--color-secondary);
+        }
+
+        .version-card.ultimate .price {
+            color: var(--color-accent);
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-bottom: 24px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .feature-item {
+            padding: 10px 0;
+            font-size: 13px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        body.dark .feature-item {
+            border-bottom-color: #475569;
+        }
+
+        .feature-item:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            font-size: 16px;
+        }
+
+        .feature-icon.disabled {
+            opacity: 0.3;
+        }
+
+        .version-card.pro {
+            position: relative;
+            transform: scale(1.05);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--color-secondary);
+            color: white;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0288D1;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--color-secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7a6d5e;
+            transform: translateY(-2px);
+        }
+
+        .btn-accent {
+            background: var(--color-accent);
+            color: #333;
+        }
+
+        .btn-accent:hover {
+            background: #b8cc2f;
+            transform: translateY(-2px);
+        }
+
+        .comparison-section {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+
+        body.dark .comparison-section {
+            background: #1e293b;
+        }
+
+        .comparison-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 32px;
+            text-align: center;
+            padding-bottom: 16px;
+            border-bottom: 3px solid var(--color-primary);
+        }
+
+        .comparison-table {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f0f0f0;
+            padding: 16px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #e5e7eb;
+        }
+
+        body.dark th {
+            background: #334155;
+            border-color: #475569;
+        }
+
+        td {
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+        }
+
+        body.dark td {
+            border-color: #475569;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        body.dark tr:hover {
+            background: #334155;
+        }
+
+        .check-icon {
+            color: #4caf50;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .cross-icon {
+            color: #f44336;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .faq-section {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+        }
+
+        body.dark .faq-section {
+            background: #1e293b;
+        }
+
+        .faq-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 32px;
+            text-align: center;
+            padding-bottom: 16px;
+            border-bottom: 3px solid var(--color-primary);
+        }
+
+        .faq-item {
+            margin-bottom: 24px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        body.dark .faq-item {
+            border-color: #475569;
+        }
+
+        .faq-question {
+            padding: 16px;
+            background: #f9f9f9;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        body.dark .faq-question {
+            background: #334155;
+        }
+
+        .faq-answer {
+            padding: 16px;
+            background: white;
+            font-size: 13px;
+            line-height: 1.6;
+            display: none;
+        }
+
+        body.dark .faq-answer {
+            background: #1e293b;
+        }
+
+        .faq-answer.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 28px;
+            }
+
+            .versions-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .version-card.pro {
+                transform: scale(1);
+            }
+
+            .comparison-section,
+            .faq-section {
+                padding: 20px;
+            }
+
+            table {
+                font-size: 11px;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+        }
+
+        .feature-limit {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        body.dark .feature-limit {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 頭部 -->
+        <div class="header">
+            <h1 class="header-title">⚡ 電表管理系統</h1>
+            <p class="header-subtitle">選擇適合您的版本</p>
+        </div>
+
+        <!-- 版本卡片 -->
+        <div class="versions-grid">
+            <!-- Advance 版本 -->
+            <div class="version-card advance">
+                <div class="version-badge">📊 ADVANCE</div>
+                <h3 class="version-name">Advance</h3>
+                <p class="version-description">
+                    基礎版本，適合小型企業和個人用戶。支持單個電表的實時監控和基本配置。
+                </p>
+                <div class="price">Free</div>
+
+                <ul class="feature-list">
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>
+                            單個真實電表
+                            <div class="feature-limit">支持 1 個電表</div>
+                        </span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>
+                            基本協議支持
+                            <div class="feature-limit">Modbus / MQTT / HTTP（3 種）</div>
+                        </span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>實時數據顯示</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>簡單配置管理</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>基礎故障診斷</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>
+                            虛擬電表模擬
+                            <div class="feature-limit">1 種場景</div>
+                        </span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon disabled">✗</span>
+                        <span style="opacity: 0.5;">多電表管理</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon disabled">✗</span>
+                        <span style="opacity: 0.5;">歷史數據分析</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon disabled">✗</span>
+                        <span style="opacity: 0.5;">與其他模塊集成</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon disabled">✗</span>
+                        <span style="opacity: 0.5;">API 支持</span>
+                    </li>
+                </ul>
+
+                <button class="btn btn-primary" onclick="selectVersion('advance')">
+                    🚀 選擇 Advance
+                </button>
+            </div>
+
+            <!-- Pro 版本 -->
+            <div class="version-card pro">
+                <div class="popular-badge">⭐ 推薦</div>
+                <div class="version-badge">🎯 PRO</div>
+                <h3 class="version-name">Pro</h3>
+                <p class="version-description">
+                    專業版本，適合中型企業。支持多個電表、主流協議和完整的數據分析。
+                </p>
+                <div class="price">$490/year</div>
+
+                <ul class="feature-list">
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>
+                            多個電表支持
+                            <div class="feature-limit">最多 10 個電表</div>
+                        </span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>
+                            完整協議支持
+                            <div class="feature-limit">10+ 種協議</div>
+                        </span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>實時數據監控</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>完整配置管理</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>高級故障診斷</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>
+                            虛擬電表
+                            <div class="feature-limit">5 種場景</div>
+                        </span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>歷史數據查詢</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>與平台模塊集成</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>基礎 API 支持</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon disabled">✗</span>
+                        <span style="opacity: 0.5;">企業級安全</span>
+                    </li>
+                </ul>
+
+                <button class="btn btn-secondary" onclick="selectVersion('pro')">
+                    🎯 選擇 Pro
+                </button>
+            </div>
+
+            <!-- Ultimate 版本 -->
+            <div class="version-card ultimate">
+                <div class="version-badge">👑 ULTIMATE</div>
+                <h3 class="version-name">Ultimate</h3>
+                <p class="version-description">
+                    旗艦版本，適合大型企業。全功能支持、企業級安全和完整的行業解決方案。
+                </p>
+                <div class="price">$1490/year</div>
+
+                <ul class="feature-list">
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>
+                            無限電表支持
+                            <div class="feature-limit">無限制</div>
+                        </span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>
+                            全部協議支持
+                            <div class="feature-limit">15+ 種協議 + 自定義</div>
+                        </span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>實時數據監控</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>完整配置管理</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>AI 智能診斷</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>
+                            虛擬電表
+                            <div class="feature-limit">所有場景 + 自定義</div>
+                        </span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>高級數據分析</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>與全部模塊集成</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>完整 REST API</span>
+                    </li>
+                    <li class="feature-item">
+                        <span class="feature-icon">✓</span>
+                        <span>企業級安全 + 加密</span>
+                    </li>
+                </ul>
+
+                <button class="btn btn-accent" onclick="selectVersion('ultimate')">
+                    👑 選擇 Ultimate
+                </button>
+            </div>
+        </div>
+
+        <!-- 對比表格 -->
+        <div class="comparison-section">
+            <h2 class="comparison-title">📊 功能對比</h2>
+            
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>功能</th>
+                            <th style="text-align: center; color: var(--color-primary);">Advance</th>
+                            <th style="text-align: center; color: var(--color-secondary);">Pro</th>
+                            <th style="text-align: center; color: var(--color-accent);">Ultimate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>電表數量</td>
+                            <td style="text-align: center;">1 個</td>
+                            <td style="text-align: center;">10 個</td>
+                            <td style="text-align: center;">無限制</td>
+                        </tr>
+                        <tr>
+                            <td>支持協議</td>
+                            <td style="text-align: center;">3 種</td>
+                            <td style="text-align: center;">10+ 種</td>
+                            <td style="text-align: center;">15+ + 自定義</td>
+                        </tr>
+                        <tr>
+                            <td>實時監控</td>
+                            <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                            <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                            <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>虛擬電表</td>
+                            <td style="text-align: center;">1 場景</td>
+                            <td style="text-align: center;">5 場景</td>
+                            <td style="text-align: center;">全部 + 自定義</td>
+                        </tr>
+                        <tr>
+                            <td>歷史數據</td>
+                            <td style="text-align: center;"><span class="cross-icon">✗</span></td>
+                            <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                            <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>數據分析</td>
+                            <td style="text-align: center;"><span class="cross-icon">✗</span></td>
+                            <td style="text-align: center;">基礎</td>
+                            <td style="text-align: center;">高級 + AI</td>
+                        </tr>
+                        <tr>
+                            <td>API 支持</td>
+                            <td style="text-align: center;"><span class="cross-icon">✗</span></td>
+                            <td style="text-align: center;">基礎</td>
+                            <td style="text-align: center;">完整</td>
+                        </tr>
+                        <tr>
+                            <td>與平台集成</td>
+                            <td style="text-align: center;"><span class="cross-icon">✗</span></td>
+                            <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                            <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>企業級安全</td>
+                            <td style="text-align: center;"><span class="cross-icon">✗</span></td>
+                            <td style="text-align: center;"><span class="cross-icon">✗</span></td>
+                            <td style="text-align: center;"><span class="check-icon">✓</span></td>
+                        </tr>
+                        <tr>
+                            <td>技術支持</td>
+                            <td style="text-align: center;">社區支持</td>
+                            <td style="text-align: center;">郵件支持</td>
+                            <td style="text-align: center;">24/7 專業支持</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 常見問題 -->
+        <div class="faq-section">
+            <h2 class="faq-title">❓ 常見問題</h2>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>如何升級版本？</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    您可以隨時升級到更高版本。我們會按比例退款現有訂閱，新版本費用立即生效。升級過程無縫進行，無需重新配置。
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Advance 版本的限制是什麼？</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    Advance 版本限制於單個電表、3 種基本協議、無歷史數據分析和無 API 支持。適合個人和小型企業測試使用。
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Pro 版本支持哪些協議？</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    Pro 版本支持 10+ 種主流協議：Modbus RTU/TCP、MQTT、HTTP REST、IEC 60870、DNP3、OPC UA、DLT645、CJ/T188 等。
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>Ultimate 版本可以支持無限電表嗎？</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    是的，Ultimate 版本支持無限數量的電表，同時支持所有協議和高級功能。完全滿足企業級需求。
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>可以同時使用真實和虛擬電表嗎？</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    Pro 和 Ultimate 版本支持混合使用。您可以配置若干真實電表和虛擬電表，隨時切換使用。
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFAQ(this)">
+                    <span>如何獲得技術支持？</span>
+                    <span>+</span>
+                </div>
+                <div class="faq-answer">
+                    Advance 版本享受社區支持，Pro 版本提供郵件支持（48 小時內回復），Ultimate 版本享受 24/7 專業支持。
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部信息 -->
+        <div style="text-align: center; padding: 40px; background: white; border-radius: 16px; margin-bottom: 40px;">
+            <h3 style="margin-bottom: 16px;">💡 需要幫助選擇版本？</h3>
+            <p style="color: #666; margin-bottom: 20px;">
+                聯繫我們的銷售團隊，我們會根據您的具體需求提供建議。
+            </p>
+            <button class="btn btn-primary" style="max-width: 300px;" onclick="contactSales()">
+                📞 聯繫銷售
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function selectVersion(version) {
+            const versions = {
+                advance: 'meter-management-system-advance.html',
+                pro: 'meter-management-system-pro.html',
+                ultimate: 'meter-management-system-ultimate.html'
+            };
+
+            alert(`✅ 已選擇 ${version.toUpperCase()} 版本\n將打開完整系統...`);
+            // window.location.href = versions[version];
+        }
+
+        function toggleFAQ(element) {
+            const answer = element.nextElementSibling;
+            answer.classList.toggle('show');
+            element.querySelector('span:last-child').textContent = 
+                answer.classList.contains('show') ? '−' : '+';
+        }
+
+        function contactSales() {
+            alert('聯繫銷售\n\n📧 sales@elitegets.com\n☎️ +886-2-1234-5678\n💬 線上客服');
+        }
+    </script>
+</body>
+</html>

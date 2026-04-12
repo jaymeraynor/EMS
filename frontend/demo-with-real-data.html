@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能源管理平台 - 真實數據版本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 50%, #e0f2fe 100%);
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a365d 100%);
+            color: #ffffff;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        body.dark .navbar {
+            background: rgba(30, 41, 59, 0.95);
+            border-bottom-color: #475569;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #06b6d4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .btn-toggle:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark .btn-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #f0f4f8;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        body.dark .status-indicator {
+            background: #334155;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+        }
+
+        .status-dot.disconnected {
+            background: #dc2626;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 80px;
+            bottom: 0;
+            width: 280px;
+            background: white;
+            border-right: 2px solid #e5e7eb;
+            padding: 24px;
+            overflow-y: auto;
+            z-index: 60;
+            transition: transform 0.3s ease;
+        }
+
+        body.dark .sidebar {
+            background: #1e293b;
+            border-right-color: #475569;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+
+        @media (min-width: 769px) {
+            .sidebar {
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .tab-button {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: 12px;
+            background: none;
+            cursor: pointer;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        body.dark .tab-button {
+            color: #ccc;
+        }
+
+        .tab-button:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        body.dark .tab-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            display: none;
+            z-index: 50;
+            top: 80px;
+        }
+
+        @media (max-width: 768px) {
+            .overlay.show {
+                display: block;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .overlay {
+                display: none !important;
+            }
+        }
+
+        .main-content {
+            flex: 1;
+            margin-top: 80px;
+            padding: 32px;
+            width: 100%;
+            max-width: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 16px;
+                width: 100%;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .main-content {
+                margin-left: 280px;
+                padding: 32px;
+                width: calc(100% - 280px);
+            }
+        }
+
+        .content-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .content-subtitle {
+            color: #999;
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+
+        body.dark .content-subtitle {
+            color: #aaa;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .metric-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .metric-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        body.dark .metric-label {
+            color: #aaa;
+        }
+
+        .metric-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-unit {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        body.dark .progress-bar {
+            background: #334155;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .buildings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .building-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .building-card {
+            background: #1e293b;
+            border-color: #475569;
+        }
+
+        .building-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .building-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .building-power {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .building-temp {
+            font-size: 12px;
+            color: #999;
+        }
+
+        body.dark .building-temp {
+            color: #aaa;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3b82f6;
+            animation: loading 1.4s infinite;
+        }
+
+        @keyframes loading {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航 -->
+    <div class="navbar">
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <div class="logo-text">能源管理平台</div>
+        </div>
+        <div class="nav-controls">
+            <div class="status-indicator" id="api-status">
+                <span class="status-dot connected"></span>
+                <span id="status-text">連接中...</span>
+            </div>
+            <button class="btn-toggle" onclick="toggleDarkMode()" title="切換深浚模式">
+                <span id="theme-toggle">🌙</span>
+            </button>
+            <button class="btn-toggle" onclick="toggleSidebar()" title="打開菜單" style="display: none;" id="menu-btn-mobile">
+                <span>☰</span>
+            </button>
+            <button class="btn-toggle" onclick="closeSidebar()" style="display: none;" id="menu-btn-close">
+                <span>✕</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 遮罩層 -->
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 側邊欄 -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-title">📑 功能導航</div>
+            <button class="tab-button active" onclick="switchTab(event, 'dashboard')">📊 儀表板</button>
+            <button class="tab-button" onclick="switchTab(event, 'settings')">⚙️ 設置</button>
+        </div>
+
+        <!-- 主內容 -->
+        <div class="main-content">
+
+            <!-- 儀表板 -->
+            <div id="dashboard" class="tab-content active">
+                <div class="content-title">📊 儀表板</div>
+                <div class="content-subtitle">實時園區能源監控系統 - 連接真實電錶數據</div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">🔵 關鍵指標</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-label">實時功率</div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4); color: white;">⚡</div>
+                        </div>
+                        <div class="metric-value" id="realtime-power">-- <span class="loading"></span></div>
+                        <div class="metric-unit">kW</div>
+                        <div class="progress-bar"><div class="progress-fill" id="power-progress" style="width: 0%;"></div></div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-label">總耗能（今日）</div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white;">📊</div>
+                        </div>
+                        <div class="metric-value" id="total-energy">-- <span class="loading"></span></div>
+                        <div class="metric-unit">kWh</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 50%; background: linear-gradient(90deg, #06b6d4, #3b82f6);"></div></div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-label">電錶連接狀態</div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #10b981, #22c55e); color: white;">🔌</div>
+                        </div>
+                        <div class="metric-value" id="meter-count">0</div>
+                        <div class="metric-unit">個電錶已連接</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-label">數據更新頻率</div>
+                            <div class="metric-icon" style="background: linear-gradient(135deg, #fbbf24, #f97316); color: white;">📡</div>
+                        </div>
+                        <div class="metric-value">10s</div>
+                        <div class="metric-unit">自動更新間隔</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 32px 0 16px 0; font-size: 18px;">🏢 樓宇實時監控</h3>
+                <div class="buildings-grid" id="buildings-container">
+                    <div style="padding: 20px; text-align: center; grid-column: 1/-1;">
+                        <div class="loading" style="display: inline-block; margin-right: 8px;"></div>
+                        <span>正在連接到 API 服務器...</span>
+                    </div>
+                </div>
+
+                <h3 style="margin: 32px 0 16px 0; font-size: 18px;">📡 數據源信息</h3>
+                <div style="background: white; border: 2px solid #e5e7eb; border-radius: 16px; padding: 24px; margin-bottom: 32px;">
+                    <div style="display: grid; gap: 16px;">
+                        <div style="padding: 12px; background: #f9fafb; border-radius: 8px;">
+                            <div style="font-weight: bold; margin-bottom: 4px;">API 端點</div>
+                            <div style="font-size: 13px; color: #666; font-family: monospace;">
+                                http://localhost:8000/api/energy/realtime
+                            </div>
+                        </div>
+                        <div style="padding: 12px; background: #f9fafb; border-radius: 8px;">
+                            <div style="font-weight: bold; margin-bottom: 4px;">數據庫</div>
+                            <div style="font-size: 13px; color: #666;">InfluxDB (localhost:8086)</div>
+                        </div>
+                        <div style="padding: 12px; background: #f9fafb; border-radius: 8px;">
+                            <div style="font-weight: bold; margin-bottom: 4px;">更新策略</div>
+                            <div style="font-size: 13px; color: #666;">每 10 秒自動從電錶採集一次</div>
+                        </div>
+                        <div style="padding: 12px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                            <div style="font-weight: bold; margin-bottom: 4px;">💡 提示</div>
+                            <div style="font-size: 13px;">
+                                此應用可直接連接到真實電錶數據。<br/>
+                                請確保 API 服務器已啟動：<br/>
+                                <code style="font-family: monospace; background: #fff; padding: 4px 8px; border-radius: 4px;">python3 -m uvicorn main:app --reload</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 設置 -->
+            <div id="settings" class="tab-content">
+                <div class="content-title">⚙️ 設置</div>
+                <div class="content-subtitle">API 連接和電錶配置</div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">🔧 API 設置</h3>
+                <div style="background: white; border: 2px solid #e5e7eb; border-radius: 16px; padding: 24px; margin-bottom: 32px;">
+                    <div style="display: grid; gap: 16px;">
+                        <div>
+                            <label style="display: block; font-weight: bold; margin-bottom: 8px;">API 端點</label>
+                            <input type="text" id="api-endpoint" value="http://localhost:8000" 
+                                style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-family: monospace;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: bold; margin-bottom: 8px;">更新間隔（秒）</label>
+                            <input type="number" id="update-interval" value="10" min="5" max="60"
+                                style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;">
+                        </div>
+                        <button onclick="saveSettings()" style="padding: 12px; background: linear-gradient(90deg, #3b82f6, #06b6d4); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                            💾 保存設置
+                        </button>
+                    </div>
+                </div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">📋 支持的電錶協議</h3>
+                <div style="display: grid; gap: 12px;">
+                    <div style="padding: 12px; background: #f0f4f8; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                        <div style="font-weight: bold;">✓ Modbus RTU (RS485)</div>
+                        <div style="font-size: 13px; color: #666;">最常見的工業電錶標準</div>
+                    </div>
+                    <div style="padding: 12px; background: #f0f4f8; border-radius: 8px; border-left: 4px solid #06b6d4;">
+                        <div style="font-weight: bold;">✓ MQTT 協議</div>
+                        <div style="font-size: 13px; color: #666;">支持無線連接和遠程傳輸</div>
+                    </div>
+                    <div style="padding: 12px; background: #f0f4f8; border-radius: 8px; border-left: 4px solid #10b981;">
+                        <div style="font-weight: bold;">✓ HTTP REST API</div>
+                        <div style="font-size: 13px; color: #666;">直接通過 Web 服務獲取數據</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 24px 0 16px 0; font-size: 18px;">📚 快速開始</h3>
+                <div style="background: #fffbeb; border: 2px solid #fbbf24; border-radius: 12px; padding: 16px; margin-bottom: 32px;">
+                    <div style="font-weight: bold; margin-bottom: 12px;">🚀 啟動電錶數據採集服務：</div>
+                    <code style="display: block; background: #fff; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; overflow-x: auto;">
+# 1. 啟動數據採集服務<br/>
+python3 services/meter_collector.py<br/>
+<br/>
+# 2. 啟動 API 服務<br/>
+python3 -m uvicorn main:app --reload<br/>
+<br/>
+# 3. 訪問前端<br/>
+http://localhost:3000<br/>
+                    </code>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        let config = {
+            apiEndpoint: localStorage.getItem('apiEndpoint') || 'http://localhost:8000',
+            updateInterval: parseInt(localStorage.getItem('updateInterval') || '10') * 1000,
+            maxPower: 500  // kW
+        };
+
+        // 全局變量
+        let apiStatus = 'disconnected';
+        let updateTimer = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            updateMenuButtons();
+            initDarkMode();
+            startDataFetch();
+        });
+
+        // 初始化深浚模式
+        function initDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark');
+                document.getElementById('theme-toggle').textContent = '☀️';
+            }
+        }
+
+        // 切換深浚模式
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // 啟動數據獲取
+        function startDataFetch() {
+            fetchData();
+            if (updateTimer) clearInterval(updateTimer);
+            updateTimer = setInterval(fetchData, config.updateInterval);
+        }
+
+        // 獲取數據
+        async function fetchData() {
+            try {
+                // 測試連接
+                const response = await fetch(`${config.apiEndpoint}/api/energy/realtime`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateUI(data);
+                    setApiStatus('connected');
+                } else {
+                    setApiStatus('disconnected');
+                    showPlaceholderData();
+                }
+            } catch (error) {
+                console.error('API 錯誤:', error);
+                setApiStatus('disconnected');
+                showPlaceholderData();
+            }
+        }
+
+        // 更新 UI
+        function updateUI(meters) {
+            if (!Array.isArray(meters) || meters.length === 0) {
+                showPlaceholderData();
+                return;
+            }
+
+            // 計算總功率
+            const totalPower = meters.reduce((sum, m) => sum + (m.power || 0), 0);
+            const totalEnergy = meters.reduce((sum, m) => sum + (m.energy_today || 0), 0);
+
+            // 更新指標卡片
+            document.getElementById('realtime-power').textContent = totalPower.toFixed(1);
+            document.getElementById('total-energy').textContent = totalEnergy.toFixed(2);
+            document.getElementById('meter-count').textContent = meters.length;
+            document.getElementById('power-progress').style.width = 
+                ((totalPower / config.maxPower) * 100) + '%';
+
+            // 更新樓宇卡片
+            const container = document.getElementById('buildings-container');
+            container.innerHTML = meters.map(meter => `
+                <div class="building-card">
+                    <div class="building-name">${meter.meter_name || meter.meter_id}</div>
+                    <div class="building-power">${(meter.power || 0).toFixed(1)} kW</div>
+                    <div style="height: 6px; background: #e5e7eb; border-radius: 3px; margin: 8px 0; overflow: hidden;">
+                        <div style="width: ${Math.min((meter.power / (config.maxPower / meters.length)) * 100, 100)}%; height: 100%; background: ${getPowerColor(meter.power || 0)};"></div>
+                    </div>
+                    <div class="building-temp">
+                        📊 ${(meter.energy_today || 0).toFixed(1)} kWh
+                        <br/>
+                        🕐 ${new Date(meter.timestamp).toLocaleTimeString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 獲取功率顏色
+        function getPowerColor(power) {
+            if (power < 50) return '#3b82f6';  // 正常 - 藍色
+            if (power < 100) return '#fbbf24'; // 中等 - 黃色
+            if (power < 150) return '#f97316'; // 高 - 橙色
+            return '#dc2626';                  // 超載 - 紅色
+        }
+
+        // 顯示佔位符數據
+        function showPlaceholderData() {
+            const container = document.getElementById('buildings-container');
+            container.innerHTML = `
+                <div style="padding: 20px; text-align: center; grid-column: 1/-1;">
+                    <div style="color: #999; margin-bottom: 16px;">
+                        <div style="font-size: 48px; margin-bottom: 8px;">⚠️</div>
+                        無法連接到 API 服務器<br/>
+                        <small style="font-size: 12px;">
+                            請確保已啟動數據採集服務和 API 服務
+                        </small>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('realtime-power').innerHTML = '-- <span class="loading"></span>';
+            document.getElementById('total-energy').innerHTML = '-- <span class="loading"></span>';
+            document.getElementById('meter-count').textContent = '0';
+        }
+
+        // 設置 API 狀態
+        function setApiStatus(status) {
+            apiStatus = status;
+            const statusElement = document.getElementById('api-status');
+            const statusDot = statusElement.querySelector('.status-dot');
+            const statusText = document.getElementById('status-text');
+
+            if (status === 'connected') {
+                statusDot.className = 'status-dot connected';
+                statusText.textContent = 'API 已連接';
+            } else {
+                statusDot.className = 'status-dot disconnected';
+                statusText.textContent = 'API 未連接';
+            }
+        }
+
+        // 切換頁籃
+        function switchTab(event, tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            closeSidebar();
+        }
+
+        // 切換側邊欄
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+            updateMenuButtons();
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+            updateMenuButtons();
+        }
+
+        function updateMenuButtons() {
+            const menuBtnMobile = document.getElementById('menu-btn-mobile');
+            const menuBtnClose = document.getElementById('menu-btn-close');
+            const sidebar = document.getElementById('sidebar');
+            
+            if (window.innerWidth <= 768) {
+                if (sidebar.classList.contains('open')) {
+                    menuBtnMobile.style.display = 'none';
+                    menuBtnClose.style.display = 'flex';
+                } else {
+                    menuBtnMobile.style.display = 'flex';
+                    menuBtnClose.style.display = 'none';
+                }
+            } else {
+                menuBtnMobile.style.display = 'none';
+                menuBtnClose.style.display = 'none';
+            }
+        }
+
+        // 保存設置
+        function saveSettings() {
+            config.apiEndpoint = document.getElementById('api-endpoint').value;
+            config.updateInterval = parseInt(document.getElementById('update-interval').value) * 1000;
+            
+            localStorage.setItem('apiEndpoint', config.apiEndpoint);
+            localStorage.setItem('updateInterval', document.getElementById('update-interval').value);
+            
+            startDataFetch();
+            alert('✓ 設置已保存，數據將自動刷新');
+        }
+
+        // 監聽窗口大小變化
+        window.addEventListener('resize', updateMenuButtons);
+    </script>
+</body>
+</html>
