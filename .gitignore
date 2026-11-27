@@ -14,6 +14,7 @@ build/
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # Logs
 *.log
@@ -32,3 +33,7 @@ node_modules/
 
 # Zip files
 *.zip
+
+# Local databases / test artefacts
+*.db
+.pytest_cache/

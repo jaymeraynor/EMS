@@ -1,0 +1,44 @@
+# Taipower tariff, high-voltage / extra-high-voltage, effective 2025-10-01.
+# Source: regs file §2.1/§2.3 (詳細電價表第五章、附錄一)
+#   https://www.taipower.com.tw/media/xtofy2yw/%E8%A9%B3%E7%B4%B0%E9%9B%BB%E5%83%B9%E8%A1%A8.pdf?mediaDL=true
+# 查證日期: 2026-11-27
+# Units: basic = 元/kW/月 ; energy = 元/kWh. Prices include 5% VAT.
+# 2026-09-18 review meeting: tariff NOT changed (a change may apply from 2027-01-01 -> add a new file then).
+# Not covered (not implemented): variable-peak three-stage, batch-production schemes.
+version: taipower-2025-10-01
+effective_from: 2025-10-01
+effective_to: null
+source_url: "https://www.taipower.com.tw/media/xtofy2yw/%E8%A9%B3%E7%B4%B0%E9%9B%BB%E5%83%B9%E8%A1%A8.pdf?mediaDL=true"
+verified_on: 2026-11-27
+includes_vat: true
+rates:
+  high:
+    two_stage:
+      summer:
+        basic: {regular: 223.60, non_summer: null, sat_off: 44.70}
+        energy: {peak: 6.75, semi_peak: null, sat_semi_peak: 2.77, off_peak: 2.71}
+      non_summer:
+        basic: {regular: 166.90, non_summer: 166.90, sat_off: 33.30}
+        energy: {peak: 6.37, semi_peak: null, sat_semi_peak: 2.54, off_peak: 2.46}
+    three_stage:
+      summer:
+        basic: {regular: 223.60, semi_peak: 166.90, sat_off: 44.70}
+        energy: {peak: 9.39, semi_peak: 5.85, sat_semi_peak: 2.60, off_peak: 2.53}
+      non_summer:
+        basic: {regular: 166.90, semi_peak: 166.90, sat_off: 33.30}
+        energy: {peak: null, semi_peak: 5.47, sat_semi_peak: 2.41, off_peak: 2.32}
+  extra_high:
+    two_stage:
+      summer:
+        basic: {regular: 217.30, non_summer: null, sat_off: 43.40}
+        energy: {peak: 6.17, semi_peak: null, sat_semi_peak: 2.73, off_peak: 2.55}
+      non_summer:
+        basic: {regular: 160.60, non_summer: 160.60, sat_off: 32.10}
+        energy: {peak: 5.79, semi_peak: null, sat_semi_peak: 2.48, off_peak: 2.28}
+    three_stage:
+      summer:
+        basic: {regular: 217.30, semi_peak: 160.60, sat_off: 43.40}
+        energy: {peak: 8.69, semi_peak: 5.38, sat_semi_peak: 2.50, off_peak: 2.40}
+      non_summer:
+        basic: {regular: 160.60, semi_peak: 160.60, sat_off: 32.10}
+        energy: {peak: null, semi_peak: 5.03, sat_semi_peak: 2.31, off_peak: 2.18}

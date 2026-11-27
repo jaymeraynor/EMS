@@ -1,0 +1,12 @@
+# Taipower off-peak days (離峰日: 全日離峰計價) for two-/three-stage TOU.
+# Rule (regs §2.2): 開國紀念日、農曆除夕前1日起之春節、和平紀念日、兒童節、民族掃墓節、勞動節、
+#   端午、中秋、教師節、國慶日、臺灣光復紀念日、行憲紀念日 (依電價表註列).
+# Source: https://www.taipower.com.tw/media/xtofy2yw/%E8%A9%B3%E7%B4%B0%E9%9B%BB%E5%83%B9%E8%A1%A8.pdf?mediaDL=true
+# 查證日期: 2026-11-27
+# TODO: 台電時間電價日曆表（115/116年逐日離峰日）未核實 (regs §7 item 5). Until verified the
+#   list is EMPTY, which means holidays are billed as ordinary weekdays/Saturdays. Bill output
+#   carries a warning while the list is empty.
+# Format: list of ISO dates (YYYY-MM-DD).
+source_url: "https://www.taipower.com.tw/media/xtofy2yw/%E8%A9%B3%E7%B4%B0%E9%9B%BB%E5%83%B9%E8%A1%A8.pdf?mediaDL=true"
+verified_on: 2026-11-27
+days: []

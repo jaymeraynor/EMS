@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EMS — 儀表板</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body data-page="dashboard">
+  <header class="top">
+    <h1>EMS 儀表板 <span id="demo-badge"></span></h1>
+    <a href="bill-carbon.html">電費與碳排</a>
+    <button id="logout" type="button">登出</button>
+  </header>
+  <main>
+    <section class="card row">
+      <label>案場 <select id="site"></select></label>
+      <label>電表 <select id="meter"></select></label>
+      <p id="err" class="err" role="alert"></p>
+    </section>
+    <div class="grid2">
+      <section class="card">
+        <h2>今日用電</h2>
+        <div class="big" id="today-kwh">—</div>
+        <div class="muted" id="today-date"></div>
+        <div class="muted" id="today-coverage"></div>
+      </section>
+      <section class="card">
+        <h2>今日最高需量（15 分鐘平均）</h2>
+        <div class="big" id="max-demand">—</div>
+        <div class="muted" id="incomplete"></div>
+      </section>
+      <section class="card">
+        <h2>用電預測</h2>
+        <div class="big" id="forecast">預測：未啟用</div>
+        <div class="muted">預測模型尚未建置。</div>
+      </section>
+    </div>
+    <section class="card">
+      <h2>今日 15 分鐘需量（灰色 = 資料不完整）</h2>
+      <div id="demand-chart"></div>
+    </section>
+    <section class="card">
+      <div class="row">
+        <h2>每日用電</h2>
+        <div id="days"><button class="primary" type="button" data-days="7">近 7 天</button>
+          <button class="primary" type="button" data-days="30">近 30 天</button></div>
+      </div>
+      <div id="daily-chart"></div>
+      <table><thead><tr><th>日期</th><th>kWh</th><th>資料覆蓋率</th></tr></thead><tbody id="daily-body"></tbody></table>
+    </section>
+  </main>
+</body>
+</html>

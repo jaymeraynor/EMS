@@ -1,0 +1,13 @@
+# Grid emission factors (kgCO2e/kWh) by emission year x customer category.
+# Source (regs §3.5): https://www.moea.gov.tw/MNS/POPULACE/news/News.aspx?kind=1&menu_id=40&news_id=122891
+# 公布日期: 2026-06-02 ; 查證日期: 2026-11-27
+# 民國114年度 (2025). Never back-apply a newer factor to an earlier year.
+# TODO: 113年度(2024)係數 0.474 僅見於搜尋摘要/第三方，未核實，故不收錄。
+source_url: "https://www.moea.gov.tw/MNS/POPULACE/news/News.aspx?kind=1&menu_id=40&news_id=122891"
+published: 2026-06-02
+verified_on: 2026-11-27
+factors:
+  - year: 2025
+    public: 0.467        # 公用售電業電力排碳係數
+    industrial: 0.466    # 產業電力排碳係數 (企業盤查及揭露)
+    residential: 0.471   # 民生住宅

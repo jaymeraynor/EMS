@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EMS — 電費與碳排</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/app.js" defer></script>
+</head>
+<body data-page="bill">
+  <header class="top">
+    <h1>電費試算與範疇二碳排</h1>
+    <a href="dashboard.html">儀表板</a>
+    <button id="logout" type="button">登出</button>
+  </header>
+  <main>
+    <section class="card row">
+      <label>案場 <select id="site"></select></label>
+      <label>電表 <select id="meter"></select></label>
+      <label>電費月份 <input id="month" type="month" required></label>
+      <label>碳排年度 <input id="year" type="number" min="2000" max="2100" step="1" required></label>
+      <button id="run" class="primary" type="button">計算</button>
+      <p id="err" class="err" role="alert"></p>
+    </section>
+    <section class="card" id="bill"></section>
+    <section class="card" id="carbon"></section>
+  </main>
+</body>
+</html>

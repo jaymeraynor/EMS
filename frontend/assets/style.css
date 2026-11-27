@@ -1,0 +1,26 @@
+:root { --fg:#1c2530; --muted:#5b6776; --bg:#f4f6f9; --card:#fff; --line:#d9dfe7; --brand:#0b6e4f; --warn:#b45309; --bad:#c62828; }
+* { box-sizing: border-box; }
+body { margin:0; font:15px/1.5 system-ui, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; color:var(--fg); background:var(--bg); }
+header.top { display:flex; gap:1rem; align-items:center; padding:.75rem 1.25rem; background:var(--brand); color:#fff; }
+header.top h1 { font-size:1.1rem; margin:0; flex:1; }
+header.top a, header.top button { color:#fff; background:none; border:1px solid rgba(255,255,255,.6); border-radius:4px; padding:.25rem .6rem; text-decoration:none; cursor:pointer; font:inherit; }
+main { max-width:1100px; margin:1rem auto; padding:0 1rem; display:grid; gap:1rem; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:1rem 1.25rem; }
+.card h2 { font-size:1rem; margin:0 0 .6rem; }
+.row { display:flex; flex-wrap:wrap; gap:.75rem; align-items:end; }
+label { display:grid; gap:.2rem; font-size:.85rem; color:var(--muted); }
+select, input, button.primary { font:inherit; padding:.4rem .6rem; border:1px solid var(--line); border-radius:4px; background:#fff; }
+button.primary { background:var(--brand); color:#fff; border-color:var(--brand); cursor:pointer; }
+.badge { display:inline-block; background:var(--bad); color:#fff; border-radius:4px; padding:.05rem .5rem; font-size:.8rem; font-weight:600; margin-left:.4rem; }
+.big { font-size:2rem; font-weight:700; }
+.muted { color:var(--muted); font-size:.85rem; }
+.err { color:var(--bad); }
+.warn { color:var(--warn); }
+table { border-collapse:collapse; width:100%; }
+th, td { text-align:right; padding:.3rem .6rem; border-bottom:1px solid var(--line); }
+th:first-child, td:first-child { text-align:left; }
+ul.notes { margin:.4rem 0 0 1.2rem; padding:0; }
+svg.chart { width:100%; height:auto; background:#fbfcfd; border:1px solid var(--line); border-radius:4px; }
+.login { max-width:360px; margin:12vh auto; }
+.login form { display:grid; gap:.8rem; }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1rem; }

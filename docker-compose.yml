@@ -1,219 +1,48 @@
-version: '3.9'
-
+# Production-style stack. Copy .env.example to .env and fill in the secrets first.
 services:
-  # ==================== 前端 ====================
-  frontend:
-    image: energy-dashboard:latest
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3000"
-    environment:
-      - REACT_APP_API_URL=http://localhost:3000
-      - REACT_APP_WS_URL=ws://localhost:3000/ws/power
-      - REACT_APP_DEFAULT_LANGUAGE=zh-TW
-    depends_on:
-      - api
+  db:
+    image: postgres:17-alpine
     restart: unless-stopped
-    networks:
-      - energy-network
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set in .env}
+    volumes:
+      - ems_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # no published ports: only reachable from the compose network
 
-  # ==================== 後端 API (選擇其一) ====================
-  
-  # 方案 A: Python FastAPI
   api:
-    image: energy-api-python:latest
-    build:
-      context: ./backend/python
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - LOG_LEVEL=info
-      - PYTHONUNBUFFERED=1
-      - CORS_ORIGINS=http://localhost:3001,http://localhost:3000
-    volumes:
-      - ./backend/python:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 3000 --reload
+    build: ./backend
     restart: unless-stopped
-    networks:
-      - energy-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-
-  # 方案 B: Node.js Express (注釋掉上面的 API 並取消注釋此項)
-  # api:
-  #   image: energy-api-nodejs:latest
-  #   build:
-  #     context: ./backend/nodejs
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - NODE_ENV=production
-  #   restart: unless-stopped
-  #   networks:
-  #     - energy-network
-
-  # ==================== 時序數據庫 (可選) ====================
-  influxdb:
-    image: influxdb:2.7-alpine
-    ports:
-      - "8086:8086"
     environment:
-      # 初始化設定
-      - INFLUXDB_DB=energy
-      - INFLUXDB_ADMIN_USER=admin
-      - INFLUXDB_ADMIN_PASSWORD=adminpass123
-      - INFLUXDB_HTTP_AUTH_ENABLED=false
-    volumes:
-      - influxdb-data:/var/lib/influxdb2
-      - ./influxdb/influxdb.conf:/etc/influxdb2/influxdb.conf
-    restart: unless-stopped
-    networks:
-      - energy-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      # the app builds the URL from these parts, so passwords containing @ : / # are safe
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${POSTGRES_USER:?set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set in .env}
+      JWT_SECRET: ${JWT_SECRET:?set in .env (>= 32 chars)}
+      EMS_ENV: ${EMS_ENV:-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    # no published ports: nginx proxies /api/
 
-  # ==================== MQTT Broker (可選) ====================
-  mosquitto:
-    image: eclipse-mosquitto:2.0-alpine
-    ports:
-      - "1883:1883"   # MQTT 協議
-      - "9001:9001"   # WebSocket
-    volumes:
-      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
-      - ./mqtt/passwd.txt:/mosquitto/config/passwd.txt
-      - mosquitto-data:/mosquitto/data
-      - mosquitto-logs:/mosquitto/log
+  web:
+    image: nginx:1.27-alpine
     restart: unless-stopped
-    networks:
-      - energy-network
-    healthcheck:
-      test: ["CMD", "mosquitto_sub", "-h", "localhost", "-t", "test"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # ==================== MQTT 轉換橋接 ====================
-  mqtt-bridge:
-    image: energy-mqtt-bridge:latest
-    build:
-      context: ./backend
-      dockerfile: mqtt/Dockerfile
-    environment:
-      - MQTT_BROKER=mqtt://mosquitto:1883
-      - API_URL=http://api:3000
     depends_on:
       - api
-      - mosquitto
-    restart: unless-stopped
-    networks:
-      - energy-network
-
-  # ==================== Redis 緩存 (可選) ====================
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
     volumes:
-      - redis-data:/data
-    restart: unless-stopped
-    networks:
-      - energy-network
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # ==================== Prometheus 監控 (可選) ====================
-  prometheus:
-    image: prom/prometheus:latest
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    restart: unless-stopped
-    networks:
-      - energy-network
-
-  # ==================== Grafana 可視化 (可選) ====================
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3002:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - prometheus
-      - influxdb
-    restart: unless-stopped
-    networks:
-      - energy-network
+      - "127.0.0.1:${WEB_PORT:-8080}:80"
 
 volumes:
-  influxdb-data:
-    driver: local
-  mosquitto-data:
-    driver: local
-  mosquitto-logs:
-    driver: local
-  redis-data:
-    driver: local
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
-
-networks:
-  energy-network:
-    driver: bridge
-
-# ========== 使用說明 ==========
-# 1. 啟動完整棧
-#    docker-compose up -d
-#
-# 2. 查看日誌
-#    docker-compose logs -f api
-#    docker-compose logs -f frontend
-#
-# 3. 訪問服務
-#    前端: http://localhost:3001
-#    API: http://localhost:3000
-#    InfluxDB: http://localhost:8086
-#    Grafana: http://localhost:3002
-#    MQTT: localhost:1883 (MQTT), localhost:9001 (WebSocket)
-#
-# 4. 停止服務
-#    docker-compose down
-#
-# 5. 清理所有數據
-#    docker-compose down -v
-#
-# 6. 只運行特定服務
-#    docker-compose up -d api mosquitto
-#
-# 7. 查看容器狀態
-#    docker-compose ps
-#
-# 8. 查看網絡
-#    docker network inspect energy-network
+  ems_pgdata:
