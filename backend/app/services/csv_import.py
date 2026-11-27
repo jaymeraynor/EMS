@@ -35,7 +35,7 @@ def parse_csv(raw: bytes) -> tuple[list[ReadingIn], list[int]]:
         text = raw.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise CsvFormatError("檔案必須為 UTF-8 編碼") from exc
-    reader = csv.reader(io.StringIO(text))
+    reader = csv.reader(io.StringIO(text), strict=True)
     try:
         header = [h.strip() for h in next(reader)]
     except StopIteration:

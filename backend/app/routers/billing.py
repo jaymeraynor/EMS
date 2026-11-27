@@ -16,7 +16,10 @@ router = APIRouter(tags=["billing"])
 def bill(meter: MeterOfUser, db: DB,
          month: Annotated[str, Query(pattern=r"^\d{4}-(0[1-9]|1[0-2])$", description="YYYY-MM")]):
     year, mon = int(month[:4]), int(month[5:])
-    start, end = month_window(year, mon)
+    try:
+        start, end = month_window(year, mon)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
     samples = load_samples(db, meter.id, start, end)
     try:
         result = compute_bill(meter, samples, month, max_gap_minutes=get_settings().max_gap_minutes)

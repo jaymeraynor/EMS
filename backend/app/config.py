@@ -56,8 +56,27 @@ def get_settings() -> Settings:
     )
 
 
+PLACEHOLDER = "change-me"
+
+
+def _db_password(env) -> str:
+    from sqlalchemy.engine import make_url
+    if env.get("DATABASE_URL"):
+        try:
+            return make_url(env["DATABASE_URL"]).password or ""
+        except Exception:
+            return ""
+    return env.get("POSTGRES_PASSWORD", "")
+
+
 def validate_for_startup(s: Settings) -> None:
-    """Refuse to start with a missing/short JWT secret (except EMS_ENV=test)."""
-    if not s.is_test and len(s.jwt_secret) < MIN_SECRET_LEN:
+    """Refuse to start with a missing/short/placeholder secret (except EMS_ENV=test)."""
+    if s.is_test:
+        return
+    if len(s.jwt_secret) < MIN_SECRET_LEN:
         raise RuntimeError(
             f"JWT_SECRET must be set and at least {MIN_SECRET_LEN} characters long")
+    if PLACEHOLDER in s.jwt_secret.lower():
+        raise RuntimeError(f"JWT_SECRET still contains the '{PLACEHOLDER}' placeholder from .env.example")
+    if PLACEHOLDER in _db_password(os.environ).lower():
+        raise RuntimeError(f"The database password still contains the '{PLACEHOLDER}' placeholder from .env.example")

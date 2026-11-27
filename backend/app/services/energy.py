@@ -74,9 +74,13 @@ def day_window(d: date) -> tuple[datetime, datetime]:
 
 
 def month_window(year: int, month: int) -> tuple[datetime, datetime]:
-    start = datetime(year, month, 1, tzinfo=TAIPEI)
+    """UTC bounds of a Taipei calendar month; ValueError if either bound is not representable."""
     ny, nm = (year + 1, 1) if month == 12 else (year, month + 1)
-    return start.astimezone(UTC), datetime(ny, nm, 1, tzinfo=TAIPEI).astimezone(UTC)
+    try:
+        start = datetime(year, month, 1, tzinfo=TAIPEI).astimezone(UTC)
+        return start, datetime(ny, nm, 1, tzinfo=TAIPEI).astimezone(UTC)
+    except (ValueError, OverflowError):
+        raise ValueError(f"month out of supported range: {year:04d}-{month:02d}") from None
 
 
 def year_window(year: int) -> tuple[datetime, datetime]:

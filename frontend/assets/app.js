@@ -36,8 +36,11 @@ const fmt = (n, d = 1) => Number(n).toLocaleString("zh-TW", { minimumFractionDig
 const pct = (x) => (x * 100).toFixed(1) + "%";
 
 function taipeiToday() {
-  // en-CA formats as YYYY-MM-DD
-  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date());
+  // Assemble from numeric parts; locale-formatted strings are not guaranteed to be YYYY-MM-DD.
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date()).map((x) => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}`;
 }
 function addDays(iso, n) {
   const d = new Date(iso + "T00:00:00Z");
@@ -80,10 +83,15 @@ async function fillMeterPicker(siteSel, meterSel, onChange) {
   const sites = await api("/sites");
   clear(siteSel);
   for (const s of sites) siteSel.append(el("option", { value: s.id }, s.name));
+  let gen = 0;
   async function loadMeters() {
+    const mine = ++gen;
+    // Drop the previous site's meter (and its results) immediately.
     clear(meterSel);
-    if (!siteSel.value) return;
+    meterSel._meters = [];
+    if (!siteSel.value) { onChange(); return; }
     const meters = await api("/meters?site_id=" + encodeURIComponent(siteSel.value));
+    if (mine !== gen) return;           // a newer site selection superseded this response
     meterSel._meters = meters;
     for (const m of meters) meterSel.append(el("option", { value: m.id }, m.name + (m.is_demo ? "（模擬）" : "")));
     onChange();

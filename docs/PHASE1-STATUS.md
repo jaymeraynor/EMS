@@ -57,6 +57,16 @@
 - docker-compose 改傳 `POSTGRES_HOST/USER/PASSWORD/DB`，由 `app.config.resolve_database_url` 以 `URL.create` 組 URL（密碼含 `@ : / #` 皆可）；`DATABASE_URL` 若有設定仍優先。Alembic 同用此函式。注意 compose 本身對 `.env` 值中的 `$` 仍會做變數插值（需寫成 `$$`）。尚未實際 `docker compose up` 驗證。
 - 前端：儀表板與電費頁以請求世代計數，過期回應不渲染；無電表時清空所有指標與圖表；電費與碳排共用同一世代。僅 `node --check` 與人工檢視，**沒有瀏覽器測試**（無對應自動測試）。
 
+## Code review R2 處理紀錄
+
+7 項皆已查證並修正，無不同意項目。後端行為變更皆先寫失敗測試（`backend/tests/test_review_r2.py`，修正前 8 項失敗）。
+
+- CSV 嚴格解析：`csv.reader(strict=True)`，結尾未閉合引號（如 `"123`）現在回 422 且不寫入。
+- 月份範圍：`month_window` 對無法表示的月份丟 `ValueError`，帳單路由回 422。查證時發現 `0001-01` 也會失敗（轉 UTC 時 `OverflowError`，不只審查提到的 `0000-01`、`9999-12`），一併處理。碳排年份已限制 2000–2100，不受影響。
+- 佔位密鑰：非 `test` 環境下，`JWT_SECRET` 或資料庫密碼（`POSTGRES_PASSWORD` 或 `DATABASE_URL` 內密碼）含 `change-me`（不分大小寫）即拒絕啟動。比審查要求的「等於範例值」更寬，因為 `.env.example` 的值本身就含此字串。
+- 前端 `taipeiToday()` 改用 `formatToParts` 組 `YYYY-MM-DD`。電表挑選器加請求世代檢查，切換站點時立即清空電表與結果（`onChange` 以空清單觸發），過期的 `/meters` 回應被丟棄。僅 `node --check` 與人工檢視，**沒有瀏覽器測試**。
+- nginx：`/api/` 改用 `resolver 127.0.0.11` 加變數 `proxy_pass`，每次請求（DNS 快取 10 秒）重新解析 `api`，容器換 IP 不需重載。上傳大小改為 `/api/` 11m（含 multipart 開銷）、其餘 1m；後端仍精確檢查 10 MiB 檔案限制。**未實際載入 nginx 或 `docker compose up` 驗證**；`127.0.0.11` 假設使用 Compose 預設的使用者自訂網路。
+
 ## 已知限制
 
 - 月/年範圍的計算會把區間內所有讀數載入記憶體（年度碳排約 52 萬筆/分鐘取樣電表可行但偏重）；日後可改 SQL 彙總或預先聚合。
