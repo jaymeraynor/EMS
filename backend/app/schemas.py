@@ -18,6 +18,11 @@ _EMAIL = re.compile(r"^[^@\s]+@[^@\s]+$")
 
 NonNegFloat = Field(ge=0, allow_inf_nan=False)
 
+# Practical limits: far above any real Taipower contract, small enough that billing stays finite
+# and money() cannot overflow (checked by test_max_allowed_values_bill_ok).
+MAX_CONTRACT_KW = 1e6            # 1 GW contract capacity
+MAX_INDUSTRY_COEF = 10.0         # 行業別 coefficient is ~1; 10 is a generous ceiling
+
 
 def _norm_email(v: str) -> str:
     v = v.strip().lower()
@@ -88,14 +93,14 @@ class SiteOut(BaseModel):
 class _MeterTariff(BaseModel):
     voltage: Voltage = "high"
     scheme: Scheme = "two_stage"
-    contract_regular_kw: float = Field(default=0.0, ge=0, allow_inf_nan=False)
-    contract_non_summer_kw: float = Field(default=0.0, ge=0, allow_inf_nan=False)
-    contract_semi_peak_kw: float = Field(default=0.0, ge=0, allow_inf_nan=False)
-    contract_sat_semi_peak_kw: float = Field(default=0.0, ge=0, allow_inf_nan=False)
-    contract_off_peak_kw: float = Field(default=0.0, ge=0, allow_inf_nan=False)
+    contract_regular_kw: float = Field(default=0.0, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
+    contract_non_summer_kw: float = Field(default=0.0, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
+    contract_semi_peak_kw: float = Field(default=0.0, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
+    contract_sat_semi_peak_kw: float = Field(default=0.0, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
+    contract_off_peak_kw: float = Field(default=0.0, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
     customer_category: Category = "industrial"
     # TODO: null -> billed as 1.0 with a warning until the customer's 行業別 coefficient is known
-    industry_adjustment_coef: Optional[float] = Field(default=None, gt=0, allow_inf_nan=False)
+    industry_adjustment_coef: Optional[float] = Field(default=None, gt=0, le=MAX_INDUSTRY_COEF, allow_inf_nan=False)
 
 
 class MeterCreate(_MeterTariff):
@@ -114,13 +119,13 @@ class MeterUpdate(BaseModel):
     is_demo: Optional[bool] = None
     voltage: Optional[Voltage] = None
     scheme: Optional[Scheme] = None
-    contract_regular_kw: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
-    contract_non_summer_kw: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
-    contract_semi_peak_kw: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
-    contract_sat_semi_peak_kw: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
-    contract_off_peak_kw: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    contract_regular_kw: Optional[float] = Field(default=None, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
+    contract_non_summer_kw: Optional[float] = Field(default=None, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
+    contract_semi_peak_kw: Optional[float] = Field(default=None, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
+    contract_sat_semi_peak_kw: Optional[float] = Field(default=None, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
+    contract_off_peak_kw: Optional[float] = Field(default=None, ge=0, le=MAX_CONTRACT_KW, allow_inf_nan=False)
     customer_category: Optional[Category] = None
-    industry_adjustment_coef: Optional[float] = Field(default=None, gt=0, allow_inf_nan=False)
+    industry_adjustment_coef: Optional[float] = Field(default=None, gt=0, le=MAX_INDUSTRY_COEF, allow_inf_nan=False)
 
 
 class MeterOut(_MeterTariff):
@@ -152,6 +157,10 @@ class ReadingIn(BaseModel):
     @field_validator("ts")
     @classmethod
     def _not_in_future(cls, v: datetime) -> datetime:
+        try:
+            v = v.astimezone(timezone.utc)
+        except (OverflowError, ValueError):
+            raise ValueError("timestamp is out of the supported range") from None
         limit = datetime.now(timezone.utc) + timedelta(seconds=get_settings().ingest_max_future_skew_s)
         if v > limit:
             raise ValueError("timestamp is in the future")

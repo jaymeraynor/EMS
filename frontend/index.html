@@ -11,10 +11,10 @@
   <main>
     <section class="card login">
       <h2>EMS 能源管理系統</h2>
-      <form id="login-form" autocomplete="on">
+      <form id="login-form" method="post" action="index.html" autocomplete="on">
         <label>電子郵件 <input name="email" type="email" autocomplete="username" required></label>
         <label>密碼 <input name="password" type="password" autocomplete="current-password" required></label>
-        <button class="primary" type="submit">登入</button>
+        <button class="primary" type="submit" disabled>登入</button>
         <p id="msg" class="err" role="alert"></p>
       </form>
       <p class="muted">帳號由系統管理員建立，不開放自行註冊。</p>

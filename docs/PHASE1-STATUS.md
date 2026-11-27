@@ -85,3 +85,15 @@
 - 開發用 `/docs`：**部分不同意審查建議，採用指示的最簡做法**。未在 nginx 代理 `/docs`、`/openapi.json`，因為 Swagger UI 需載入 CDN 資產，會被 nginx 的 CSP 擋下，放寬 CSP 不值得；改在 README 記載開發時用 `docker compose exec` 或暫時發佈 api 連接埠存取。
 - 煙霧測試備註（前端）：圖表單位標籤與最上方刻度重疊 → 上邊界由 10 增為 24；電表名稱已含「模擬」時不再附加「（模擬）」。已確認 JS 與 HTML 沒有 `style` 屬性或 `setAttribute('style', …)`，SVG 僅使用呈現屬性（fill、stroke 等），不受 `style-src 'self'` 影響。前端無自動測試（僅 `node --check`），未做瀏覽器重測。
 
+
+## Code review R4 處理紀錄
+
+7 項皆已處理，先寫失敗測試（`backend/tests/test_review_r4.py`，修正前 16 個案例失敗）。
+
+- 登入表單（P1）：`<form method="post" action="index.html">`，送出鈕預設 `disabled`，`app.js` 安裝 submit handler 後才啟用；JS 載入失敗時帳密不會進入網址（最壞情況 nginx 對靜態頁 POST 回 405，這是可接受的）。pytest 解析 HTML 驗證。
+- SQLite 並行寫入（P2）：`_lock_meter` 在 SQLite 上先執行 `BEGIN IMMEDIATE` 取得寫入鎖再驗證，驗證與寫入成為一個序列化單元（Postgres 仍用列鎖）。以兩個連線/執行緒的測試驗證第二批會被拒絕。
+- 部分索引（P2）：`readings(meter_id, ts) WHERE energy_kwh_total IS NOT NULL` 與 `... kvarh_total IS NOT NULL`（模型 + migration `0002`，含 downgrade）；查詢條件 `col IS NOT NULL` 與索引述詞一致，以 SQLite `INDEXED BY` 驗證可用。原有完整索引保留供其他查詢使用。
+- 契約容量／係數上限（P2）：各契約容量 ≤ 1,000,000 kW（1 GW）、行業別調整係數 ≤ 10；建立與更新皆套用。以最大值建表並以 1e7 kW 讀數試算電費，回 200；超過回 422。上限為我的判斷值。
+- 組織 Scope 2（P2）：頂層 `kwh`、`scope2_tco2e` 僅計入真實電表；模擬電表另列 `simulated_total_kwh`、`simulated_total_emissions`。前端目前未顯示組織層級總計，無需變更。
+- 時間戳（P3）：`ReadingIn` 驗證器先轉 UTC，超出 datetime 範圍者回 422（API）／列錯誤（CSV），不再 500。
+- 前端 append(null)（P3）：`notes()` 回傳 null 時不再 append（碳排與電費兩處）；以 node 腳本模擬 DOM 驗證，並通過 `node --check`。

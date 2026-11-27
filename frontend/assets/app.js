@@ -141,6 +141,7 @@ function barChart(target, bars, { unit, height = 220, yMax } = {}) {
 function loginPage() {
   const form = $("#login-form"), msg = $("#msg");
   if (getToken()) { location.href = "dashboard.html"; return; }
+  form.querySelector("button[type=submit]").disabled = false;  // enabled only once this handler exists
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     msg.textContent = "";
@@ -254,8 +255,9 @@ function renderBill(b, meter) {
     el("tbody", {}, Object.keys(PERIOD).filter((p) => b.kwh_by_period[p] || b.max_demand_kw_by_period[p]).map((p) =>
       el("tr", {}, el("td", {}, PERIOD[p]), el("td", {}, fmt(b.kwh_by_period[p])), el("td", {}, fmt(b.max_demand_kw_by_period[p]))))));
   t.append(el("h2", {}, "各時段"), per);
-  if (b.warnings.length) t.append(el("h2", {}, "警告 / TODO"), notes(b.warnings, "warn"));
-  if (b.assumptions.length) t.append(el("h2", {}, "假設與待核實"), notes(b.assumptions));
+  const bw = notes(b.warnings, "warn"), ba = notes(b.assumptions);
+  if (bw) t.append(el("h2", {}, "警告 / TODO"), bw);
+  if (ba) t.append(el("h2", {}, "假設與待核實"), ba);
 }
 
 function renderCarbon(c) {
@@ -263,7 +265,8 @@ function renderCarbon(c) {
   t.append(el("h2", {}, `範疇二排碳 ${c.year}`, c.is_demo ? el("span", { class: "badge" }, "模擬資料") : null));
   t.append(el("div", { class: "big" }, fmt(c.scope2_tco2e, 3) + " tCO2e"));
   t.append(el("p", { class: "muted" }, `用電 ${fmt(c.kwh)} kWh　資料覆蓋率 ${pct(c.coverage)}　係數 ${c.factor_kg_per_kwh} kgCO2e/kWh（${c.factor_year} 年度，${c.customer_category === "industrial" ? "產業" : "民生"}）` + (c.provisional ? "　⚠ 暫用係數（provisional）" : "")));
-  t.append(notes(c.warnings, "warn"));
+  const w = notes(c.warnings, "warn");
+  if (w) t.append(w);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

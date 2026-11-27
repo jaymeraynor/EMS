@@ -96,8 +96,13 @@ def _lock_meter(db: Session, meter_id: int) -> None:
 
     The cumulative-register check reads existing readings, so two concurrent batches
     could otherwise each validate against the same committed data and together break
-    monotonicity. SELECT ... FOR UPDATE is a no-op on SQLite (single writer anyway).
+    monotonicity. SELECT ... FOR UPDATE is a no-op on SQLite, so there we take the database
+    write lock up front (BEGIN IMMEDIATE) so validation and insert are one serialised unit.
     """
+    if db.get_bind().dialect.name == "sqlite":
+        raw = db.connection().connection.dbapi_connection
+        if not raw.in_transaction:
+            db.connection().exec_driver_sql("BEGIN IMMEDIATE")
     db.execute(select(models.Meter.id).where(models.Meter.id == meter_id).with_for_update())
 
 

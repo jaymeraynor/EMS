@@ -6,7 +6,7 @@ from typing import Optional
 
 from sqlalchemy import (
     BigInteger, Boolean, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, MetaData,
-    String, UniqueConstraint,
+    String, UniqueConstraint, text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import TypeDecorator
@@ -111,6 +111,13 @@ class Reading(Base):
     __table_args__ = (
         UniqueConstraint("meter_id", "ts", name="uq_readings_meter_ts"),
         Index("ix_readings_meter_id_ts", "meter_id", "ts"),
+        # neighbour lookups of the cumulative-register check (WHERE <col> IS NOT NULL)
+        Index("ix_readings_meter_ts_kwh_notnull", "meter_id", "ts",
+              postgresql_where=text("energy_kwh_total IS NOT NULL"),
+              sqlite_where=text("energy_kwh_total IS NOT NULL")),
+        Index("ix_readings_meter_ts_kvarh_notnull", "meter_id", "ts",
+              postgresql_where=text("kvarh_total IS NOT NULL"),
+              sqlite_where=text("kvarh_total IS NOT NULL")),
         CheckConstraint("source IN ('api','csv')", name="source_valid"),
     )
     id: Mapped[int] = mapped_column(BigId, primary_key=True, autoincrement=True)

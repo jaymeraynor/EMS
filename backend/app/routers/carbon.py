@@ -47,11 +47,16 @@ def org_scope2(org_id: int, db: DB, user: CurrentUser, year: Year):
                         .order_by(models.Meter.id)).all()
     rows = [_meter_scope2(db, m, year) for m in meters]
     warnings = sorted({w for r in rows for w in r["warnings"]})
+    real = [r for r in rows if not r["is_demo"]]
+    demo = [r for r in rows if r["is_demo"]]
     return {
         "org_id": org_id, "year": year, "meters": rows,
-        "kwh": sum(r["kwh"] for r in rows),
+        # top-level totals cover real meters only; simulated (demo) meters are reported separately
+        "kwh": sum(r["kwh"] for r in real),
         # sum unrounded per-meter emissions (each with its own factor), round half-up once
-        "scope2_tco2e": sum_scope2_tco2e((r["kwh"], r["factor_kg_per_kwh"]) for r in rows),
+        "scope2_tco2e": sum_scope2_tco2e((r["kwh"], r["factor_kg_per_kwh"]) for r in real),
+        "simulated_total_kwh": sum(r["kwh"] for r in demo),
+        "simulated_total_emissions": sum_scope2_tco2e((r["kwh"], r["factor_kg_per_kwh"]) for r in demo),
         "provisional": any(r["provisional"] for r in rows),
         "warnings": warnings,
     }
