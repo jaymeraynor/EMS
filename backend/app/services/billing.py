@@ -92,10 +92,16 @@ def over_contract(scheme: str, summer: bool, max_demand: dict[str, float], c: Co
                   basic: BasicRates) -> list[OverItem]:
     """Excess demand surcharge (regs §2.5), per period.
 
-    Cumulative contract per period (2-stage / 3-stage):
-      peak = reg [+ ns outside summer] / reg ; semi_peak = reg + semi ;
-      sat_semi_peak = previous + sat ; off_peak = previous + off.
-      (The non-summer contract only exists outside summer, so it is not added in summer.)
+    Cumulative contract per period, reading regs §2.5 literally:
+      two-stage : summer peak = reg ; non-summer peak = reg + ns ;
+                  sat_semi_peak = reg + ns + sat ; off_peak = reg + ns + sat + off
+                  (the non-summer capacity is excluded ONLY from the summer weekday-peak
+                  threshold; it counts in the Saturday/off-peak thresholds in both seasons).
+      three-stage: peak (summer) = reg ; semi_peak = reg + semi ;
+                  sat_semi_peak = previous + sat ; off_peak = previous + off.
+                  "三段式同理加入半尖峰" is read as: the semi-peak contract is added in
+                  place of the non-summer one. Three-stage has no non-summer capacity
+                  (basic_charge ignores it as well), so it never enters these thresholds.
     Non-duplication: net excess of a period = its raw excess minus the largest raw
     excess of any higher-priority period (peak, [semi_peak], sat_semi_peak), floored at 0.
     Billing: the part up to 10% of the cumulative contract x2, the rest x3.
@@ -106,9 +112,10 @@ def over_contract(scheme: str, summer: bool, max_demand: dict[str, float], c: Co
     """
     if scheme == "two_stage":
         peak_cum = c.regular + (0.0 if summer else c.non_summer)
+        sat_cum = c.regular + c.non_summer + c.sat_semi_peak
         plan = [(tou.PEAK, peak_cum, basic.regular),
-                (tou.SAT_SEMI_PEAK, peak_cum + c.sat_semi_peak, basic.sat_off),
-                (tou.OFF_PEAK, peak_cum + c.sat_semi_peak + c.off_peak, basic.sat_off)]
+                (tou.SAT_SEMI_PEAK, sat_cum, basic.sat_off),
+                (tou.OFF_PEAK, sat_cum + c.off_peak, basic.sat_off)]
     elif scheme == "three_stage":
         semi_cum = c.regular + c.semi_peak
         plan = []

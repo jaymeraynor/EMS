@@ -97,3 +97,12 @@
 - 組織 Scope 2（P2）：頂層 `kwh`、`scope2_tco2e` 僅計入真實電表；模擬電表另列 `simulated_total_kwh`、`simulated_total_emissions`。前端目前未顯示組織層級總計，無需變更。
 - 時間戳（P3）：`ReadingIn` 驗證器先轉 UTC，超出 datetime 範圍者回 422（API）／列錯誤（CSV），不再 500。
 - 前端 append(null)（P3）：`notes()` 回傳 null 時不再 append（碳排與電費兩處）；以 node 腳本模擬 DOM 驗證，並通過 `node --check`。
+
+
+## Code review R5 處理紀錄
+
+- [P1] 已修正：兩段式超約的週六半尖峰／離峰累計門檻改為 經常+非夏月+週六半尖峰（+離峰），夏月與非夏月皆然；非夏月契約僅自夏月平日尖峰門檻排除（尖峰：夏月=經常、非夏月=經常+非夏月）。三段式維持 經常+半尖峰+…（三段式無非夏月契約，`basic_charge` 亦忽略之，故「同理加入半尖峰」解讀為以半尖峰取代非夏月）。10% 分段以各時段修正後的累計契約計算；不重複扣除仍用各時段原始超約量。測試：`backend/tests/test_review_r5.py`（修正前 3 個失敗）。
+- 未處理（open）：
+  - [P2] 大型 CSV 匯入應批次查詢電表暫存器（目前無列數上限，每列每暫存器 2 次查詢且持有電表鎖）。
+  - [P2] 時間戳應要求明確時區（`AwareDatetime` 仍接受 Unix epoch 數字／數字字串）。
+  - [P3] README 管理員初始化以命令列 `--password` 傳密碼，且範例 9 字元不符 10 字元下限。
