@@ -39,7 +39,7 @@ TEST_DATABASE_URL=postgresql+psycopg://postgres@127.0.0.1:5432/ems_test pytest -
 
 | 變數 | 說明 | 預設 |
 |---|---|---|
-| `DATABASE_URL` | SQLAlchemy URL（`postgresql+psycopg://…`） | `sqlite:///./ems.db`（僅開發） |
+| `DATABASE_URL` | SQLAlchemy URL（`postgresql+psycopg://…`）；未設定且有 `POSTGRES_HOST` 時，由 `POSTGRES_USER/PASSWORD/DB/PORT` 組成（特殊字元自動跳脫，compose 採此方式） | `sqlite:///./ems.db`（僅開發） |
 | `JWT_SECRET` | HS256 金鑰，**必填且 ≥ 32 字元**，否則服務拒絕啟動（`EMS_ENV=test` 除外） | — |
 | `EMS_ENV` | `production` / `development` / `test`。production 會關閉 /docs | `production` |
 | `JWT_EXPIRE_MINUTES` | Token 有效分鐘 | `60` |

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app import models
 from app.config import get_settings
 from app.deps import DB, CurrentUser, MeterOfUser, not_found
-from app.services.carbon import CarbonError, factor_for, scope2_tco2e
+from app.services.carbon import CarbonError, factor_for, scope2_tco2e, sum_scope2_tco2e
 from app.services.energy import integrate, year_window
 from app.services.readings import load_samples
 
@@ -50,8 +50,8 @@ def org_scope2(org_id: int, db: DB, user: CurrentUser, year: Year):
     return {
         "org_id": org_id, "year": year, "meters": rows,
         "kwh": sum(r["kwh"] for r in rows),
-        # sum of per-meter rounded values would drift; round the exact sum once
-        "scope2_tco2e": round(sum(r["scope2_tco2e"] for r in rows), 3),
+        # sum unrounded per-meter emissions (each with its own factor), round half-up once
+        "scope2_tco2e": sum_scope2_tco2e((r["kwh"], r["factor_kg_per_kwh"]) for r in rows),
         "provisional": any(r["provisional"] for r in rows),
         "warnings": warnings,
     }

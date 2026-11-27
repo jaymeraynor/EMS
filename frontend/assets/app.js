@@ -140,12 +140,20 @@ function loginPage() {
 async function dashboardPage() {
   if (!requireLogin()) return;
   const siteSel = $("#site"), meterSel = $("#meter"), days = $("#days");
-  const state = { range: 7 };
+  const state = { range: 7, gen: 0 };
+  function clearAll() {
+    for (const id of ["#today-kwh", "#today-coverage", "#max-demand", "#incomplete", "#today-date",
+                      "#demand-chart", "#daily-chart", "#daily-body"]) clear($(id));
+  }
   async function refresh() {
+    // Only the latest request may render: a slower response for a previous meter/range is dropped.
+    const gen = ++state.gen;
     const m = selectedMeter(meterSel);
     const badge = $("#demo-badge");
     clear(badge);
-    if (!m) { clear($("#today-kwh")); return; }
+    clearAll();
+    $("#err").textContent = "";
+    if (!m) return;
     if (m.is_demo) badge.append(el("span", { class: "badge" }, "模擬資料"));
     const today = taipeiToday();
     $("#today-date").textContent = today + "（Asia/Taipei）";
@@ -155,6 +163,7 @@ async function dashboardPage() {
         api(`/meters/${m.id}/demand?date=${today}`),
         api(`/meters/${m.id}/daily?start=${addDays(today, -(state.range - 1))}&end=${today}`),
       ]);
+      if (gen !== state.gen) return;
       $("#today-kwh").textContent = fmt(dayRes[0].kwh) + " kWh";
       $("#today-coverage").textContent = "資料覆蓋率 " + pct(dayRes[0].coverage);
       $("#max-demand").textContent = fmt(dem.max_demand_kw) + " kW";
@@ -170,8 +179,7 @@ async function dashboardPage() {
       })), { unit: "kWh" });
       const body = clear($("#daily-body"));
       for (const d of [...hist].reverse()) body.append(el("tr", {}, el("td", {}, d.date), el("td", {}, fmt(d.kwh)), el("td", {}, pct(d.coverage))));
-      $("#err").textContent = "";
-    } catch (e) { $("#err").textContent = e.message; }
+    } catch (e) { if (gen === state.gen) $("#err").textContent = e.message; }
   }
   for (const b of days.querySelectorAll("button")) {
     b.addEventListener("click", () => { state.range = Number(b.dataset.days); refresh(); });
@@ -186,18 +194,28 @@ async function billPage() {
   const now = taipeiToday();
   $("#month").value = now.slice(0, 7);
   $("#year").value = now.slice(0, 4);
+  let gen = 0;
   async function run() {
+    // One generation per run(): both panels render only if this is still the latest selection.
+    const mine = ++gen;
     const m = selectedMeter(meterSel);
     clear($("#bill")); clear($("#carbon")); $("#err").textContent = "";
     if (!m) return;
     const month = $("#month").value, year = $("#year").value;
-    try {
-      const b = await api(`/meters/${m.id}/bill?month=${encodeURIComponent(month)}`);
-      renderBill(b, m);
-    } catch (e) { $("#bill").append(el("p", { class: "err" }, "電費：" + e.message)); }
-    try {
-      renderCarbon(await api(`/meters/${m.id}/scope2?year=${encodeURIComponent(year)}`));
-    } catch (e) { $("#carbon").append(el("p", { class: "err" }, "碳排：" + e.message)); }
+    const current = () => mine === gen;
+    const bill = (async () => {
+      try {
+        const b = await api(`/meters/${m.id}/bill?month=${encodeURIComponent(month)}`);
+        if (current()) renderBill(b, m);
+      } catch (e) { if (current()) $("#bill").append(el("p", { class: "err" }, "電費：" + e.message)); }
+    })();
+    const carbon = (async () => {
+      try {
+        const c = await api(`/meters/${m.id}/scope2?year=${encodeURIComponent(year)}`);
+        if (current()) renderCarbon(c);
+      } catch (e) { if (current()) $("#carbon").append(el("p", { class: "err" }, "碳排：" + e.message)); }
+    })();
+    await Promise.all([bill, carbon]);
   }
   $("#run").addEventListener("click", run);
   try { await fillMeterPicker(siteSel, meterSel, run); } catch (e) { $("#err").textContent = e.message; }

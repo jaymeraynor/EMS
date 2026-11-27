@@ -1,8 +1,8 @@
-import os
 
 from alembic import context
 from sqlalchemy import create_engine
 
+from app.config import resolve_database_url
 from app.db import normalize_url
 from app.models import Base
 
@@ -11,9 +11,9 @@ target_metadata = Base.metadata
 
 
 def _url() -> str:
-    url = os.environ.get("DATABASE_URL")
+    url = resolve_database_url()
     if not url:
-        raise RuntimeError("DATABASE_URL is not set")
+        raise RuntimeError("DATABASE_URL (or POSTGRES_HOST/USER/PASSWORD/DB) is not set")
     return normalize_url(url)
 
 

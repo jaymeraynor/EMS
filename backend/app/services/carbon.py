@@ -47,7 +47,19 @@ def factor_for(year: int, category: str) -> Factor:
     raise CarbonError(f"{year} 年度排碳係數未收錄，不以較新年度係數回推")
 
 
+def _exact_tco2e(kwh: float, kg_per_kwh: float) -> Decimal:
+    return Decimal(str(kwh)) * Decimal(str(kg_per_kwh)) / Decimal(1000)
+
+
+def _round3(v: Decimal) -> float:
+    return float(v.quantize(Decimal("0.001"), rounding=ROUND_HALF_UP))
+
+
 def scope2_tco2e(kwh: float, kg_per_kwh: float) -> float:
     """tCO2e = kWh * factor / 1000, half-up to 3 decimals."""
-    v = Decimal(str(kwh)) * Decimal(str(kg_per_kwh)) / Decimal(1000)
-    return float(v.quantize(Decimal("0.001"), rounding=ROUND_HALF_UP))
+    return _round3(_exact_tco2e(kwh, kg_per_kwh))
+
+
+def sum_scope2_tco2e(parts) -> float:
+    """Organisation total from (kwh, kg_per_kwh) pairs: sum unrounded, round half-up once."""
+    return _round3(sum((_exact_tco2e(k, f) for k, f in parts), Decimal(0)))

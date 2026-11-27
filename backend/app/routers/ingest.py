@@ -26,9 +26,9 @@ def ingest(body: schemas.IngestBody, meter: MeterOfKey, db: DB):
 
 
 @router.post("/meters/{meter_id}/readings/csv", response_model=schemas.IngestResult)
-async def import_csv(meter: WritableMeter, user: WriterUser, db: DB, file: Annotated[UploadFile, File()]):
+def import_csv(meter: WritableMeter, user: WriterUser, db: DB, file: Annotated[UploadFile, File()]):
     limit = get_settings().max_csv_bytes
-    raw = await file.read(limit + 1)
+    raw = file.file.read(limit + 1)   # sync route: runs in the threadpool, not the event loop
     if len(raw) > limit:
         raise HTTPException(413, f"檔案超過 {limit // 1024 // 1024} MB")
     try:

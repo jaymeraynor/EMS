@@ -15,13 +15,14 @@ from typing import Optional, Sequence
 
 from app.services import tou
 from app.services.energy import (
-    DEFAULT_MAX_GAP_MINUTES, TAIPEI, Sample, blocks_between, month_window, register_total,
+    DEFAULT_MAX_GAP_MINUTES, TAIPEI, Sample, blocks_between, month_window, register_total_covered,
 )
 from app.services.tariff import BasicRates, TariffBook, load_default_book
 
 SCHEMES = ("two_stage", "three_stage")
 PERIODS = (tou.PEAK, tou.SEMI_PEAK, tou.SAT_SEMI_PEAK, tou.OFF_PEAK)
 CROSS_SEASON_NOTE = "TODO: 台電跨季基本電費計算方式未核實，暫以日數比例"
+CROSS_SEASON_OVER_NOTE = "TODO: 台電跨季超約附加費計算方式未核實，暫以日數比例"
 ZERO_USAGE_FACTOR = 0.5   # regs §2.4
 OVER_TIER_FRACTION = 0.10  # regs §2.5
 OVER_TIER_MULTIPLIERS = (2, 3)
@@ -191,6 +192,7 @@ def compute_bill(meter, samples: Sequence[Sample], month, *, book: Optional[Tari
     n_days = len(day_seg)
     if len(seg_days) > 1:
         assumptions.append(CROSS_SEASON_NOTE)
+        assumptions.append(CROSS_SEASON_OVER_NOTE)
 
     blocks = blocks_between(samples, start, end, max_gap_minutes)
     kwh_by_period = {p: 0.0 for p in PERIODS}
@@ -224,12 +226,14 @@ def compute_bill(meter, samples: Sequence[Sample], month, *, book: Optional[Tari
                 energy += seg_kwh[(ver, summer)][p] * rates.energy.for_period(p)
         basic += basic_charge(scheme, summer, contracts, rates.basic) * days / n_days
         for it in over_contract(scheme, summer, seg_demand[(ver, summer)], contracts, rates.basic):
+            share = it.amount * days / n_days    # monthly rule: prorate by days like the basic charge
             row = it.as_dict()
-            row.update(season="summer" if summer else "non_summer", tariff_version=ver)
+            row.update(season="summer" if summer else "non_summer", tariff_version=ver,
+                       segment_days=days, segment_amount=row["amount"], amount=money(share))
             over_items.append(row)
-            over_total += it.amount
+            over_total += share
 
-    zero_usage = total_kwh < 1e-9 and all(v < 1e-9 for v in max_demand.values()) and coverage > 0
+    zero_usage = total_kwh < 1e-9 and all(v < 1e-9 for v in max_demand.values()) and coverage >= 1 - 1e-9
     if zero_usage:
         basic *= ZERO_USAGE_FACTOR
         assumptions.append("當月未用電（度數與最高需量均為 0）：基本電費按 50% 計 (regs §2.4)")
@@ -256,18 +260,21 @@ def compute_bill(meter, samples: Sequence[Sample], month, *, book: Optional[Tari
     base = money((basic_r + energy_r) * coef)
 
     # power factor
-    has_kvarh = sum(1 for s in samples if s.kvarh_total is not None) >= 2
     pf_info: dict = {"available": False, "average_pf": None, "points": None, "rate": 0.0,
                      "kvarh": None, "amount": 0.0}
-    if has_kvarh and total_kwh > 0:
-        kvarh = register_total(samples, start, end, "kvarh_total", max_gap_minutes)
+    kvarh, kvarh_covered = register_total_covered(samples, start, end, "kvarh_total", max_gap_minutes)
+    # kWh and kVARh must describe the same intervals (kVARh segments are a subset of kWh segments)
+    kvarh_complete = kvarh_covered > 0 and kvarh_covered >= covered - 1e-6
+    if kvarh_complete and total_kwh > 0:
         pf = power_factor_adjustment(total_kwh, kvarh)
         pf_info.update(available=True, average_pf=round(pf.pf, 4), points=pf.points,
                        rate=pf.rate, kvarh=kvarh, amount=money(base * pf.rate))
         assumptions.append("功率因數以月平均 kWh/√(kWh²+kVARh²) 取整數百分點（無條件捨去）計算；"
                            "整數點數取法台電未明載")
+    elif total_kwh > 0 and kvarh_covered > 0:
+        warnings.append("kVARh 讀數未涵蓋所有有 kWh 的時段，未計功率因數調整")
     else:
-        warnings.append("無 kVARh 讀數或無用電，未計功率因數調整")
+        warnings.append("無 kVARh 讀數（kVARh 無有效區間）或無用電，未計功率因數調整")
 
     over_r = money(over_total)
     total = money(base + pf_info["amount"] + over_r)

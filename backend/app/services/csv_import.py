@@ -40,6 +40,8 @@ def parse_csv(raw: bytes) -> tuple[list[ReadingIn], list[int]]:
         header = [h.strip() for h in next(reader)]
     except StopIteration:
         raise CsvFormatError("檔案是空的") from None
+    except csv.Error as exc:
+        raise CsvFormatError(f"CSV 格式錯誤（第 1 行）：{exc}") from None
     if not all(c in header for c in REQUIRED) or any(c not in ALLOWED for c in header) \
             or len(set(header)) != len(header):
         raise CsvFormatError("標題列必須是 ts,power_kw[,energy_kwh_total,kvarh_total]")
@@ -47,7 +49,15 @@ def parse_csv(raw: bytes) -> tuple[list[ReadingIn], list[int]]:
     items: list[ReadingIn] = []
     rows: list[int] = []
     errors: list[dict] = []
-    for line_no, row in enumerate(reader, start=2):
+    while True:
+        try:
+            row = next(reader)
+        except StopIteration:
+            break
+        except csv.Error as exc:       # e.g. field larger than csv.field_size_limit
+            raise CsvRowErrors(errors[:MAX_LISTED_ERRORS - 1]
+                               + [{"row": reader.line_num, "error": f"CSV 格式錯誤：{exc}"}]) from None
+        line_no = reader.line_num
         if not row or all(not c.strip() for c in row):
             continue
         if len(row) != len(header):

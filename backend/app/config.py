@@ -24,11 +24,27 @@ class Settings:
         return self.ems_env == "test"
 
 
+def resolve_database_url(env=None) -> str | None:
+    """DATABASE_URL if set, else a URL built from POSTGRES_* parts (credentials escaped)."""
+    e = os.environ if env is None else env
+    if e.get("DATABASE_URL"):
+        return e["DATABASE_URL"]
+    host = e.get("POSTGRES_HOST")
+    if not host:
+        return None
+    from sqlalchemy.engine import URL
+    return URL.create(
+        "postgresql+psycopg", username=e.get("POSTGRES_USER") or None,
+        password=e.get("POSTGRES_PASSWORD") or None, host=host,
+        port=int(e.get("POSTGRES_PORT", "5432")), database=e.get("POSTGRES_DB") or None,
+    ).render_as_string(hide_password=False)
+
+
 def get_settings() -> Settings:
     """Read settings fresh from the environment (cheap; keeps tests/monkeypatching simple)."""
     e = os.environ
     return Settings(
-        database_url=e.get("DATABASE_URL", "sqlite:///./ems.db"),
+        database_url=resolve_database_url(e) or "sqlite:///./ems.db",
         jwt_secret=e.get("JWT_SECRET", ""),
         ems_env=e.get("EMS_ENV", "production"),
         jwt_expire_minutes=int(e.get("JWT_EXPIRE_MINUTES", "60")),

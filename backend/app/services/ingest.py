@@ -82,7 +82,18 @@ def store_readings(db: Session, meter: models.Meter, items: Sequence[ReadingIn],
     raise AssertionError("unreachable")
 
 
+def _lock_meter(db: Session, meter_id: int) -> None:
+    """Serialise writers per meter: hold the meter row lock until commit/rollback.
+
+    The cumulative-register check reads existing readings, so two concurrent batches
+    could otherwise each validate against the same committed data and together break
+    monotonicity. SELECT ... FOR UPDATE is a no-op on SQLite (single writer anyway).
+    """
+    db.execute(select(models.Meter.id).where(models.Meter.id == meter_id).with_for_update())
+
+
 def _store_once(db, meter, items, source, user_id) -> dict:
+    _lock_meter(db, meter.id)
     received = len(items)
     seen: set[datetime] = set()
     fresh: list[tuple[int, ReadingIn]] = []

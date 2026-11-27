@@ -146,13 +146,24 @@ def integrate(samples: Sequence[Sample], start: datetime, end: datetime,
 def register_total(samples: Sequence[Sample], start: datetime, end: datetime, field: str,
                    max_gap_minutes: float = DEFAULT_MAX_GAP_MINUTES) -> float:
     """Register increase (e.g. kvarh_total) inside the window, same gap rules as kWh."""
+    return register_total_covered(samples, start, end, field, max_gap_minutes)[0]
+
+
+def register_total_covered(samples: Sequence[Sample], start: datetime, end: datetime, field: str,
+                           max_gap_minutes: float = DEFAULT_MAX_GAP_MINUTES) -> tuple[float, float]:
+    """(register increase, covered seconds) inside the window.
+
+    Covered seconds count only segments whose two ends both carry the register and
+    that are not longer than the gap limit, so callers can tell "measured zero" from
+    "not measured".
+    """
     def val(a: Sample, b: Sample, f_lo: float, f_hi: float, dt: float) -> Optional[float]:
         ra, rb = getattr(a, field), getattr(b, field)
         if ra is None or rb is None:
             return None
         return max(0.0, rb - ra) * (f_hi - f_lo)
-    totals, _ = _accumulate(samples, [start, end], max_gap_minutes, val)
-    return totals[0]
+    totals, covered = _accumulate(samples, [start, end], max_gap_minutes, val)
+    return totals[0], covered[0]
 
 
 # --- days and demand ------------------------------------------------------------
