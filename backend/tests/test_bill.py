@@ -303,3 +303,18 @@ def test_bill_splits_energy_by_day_when_tariff_version_changes_mid_month():
     assert b["basic_charge"] == pytest.approx(23701.00)
     assert b["total"] == pytest.approx(542029.00)
     assert b["tariff_versions"] == ["taipower-2025-10-01", "v2"]
+
+
+def test_incomplete_blocks_are_counted_and_energy_still_billed():
+    # Drop the readings strictly between 12:00 and 13:00 Taipei on 2026-07-01 (04:00Z-05:00Z):
+    # the 60-min segment is not integrated, so 4 blocks (12:00-13:00) are incomplete.
+    # They add no kWh (peak 34,500 - 100 kW*1 h = 34,400) and no max-demand candidate.
+    from tests.helpers import utc
+    lo, hi = utc("2026-07-01T04:00"), utc("2026-07-01T05:00")
+    samples = [s for s in month_samples(2026, 7) if not (lo < s.ts < hi)]
+    b = compute_bill(meter(), samples, "2026-07")
+    assert b["incomplete_blocks"] == 4
+    assert b["kwh_by_period"]["peak"] == pytest.approx(34400)
+    assert b["max_demand_kw_by_period"]["peak"] == pytest.approx(100)
+    assert b["coverage"] == pytest.approx(1 - 4 / 2976)
+    assert any("覆蓋率" in w for w in b["warnings"])
