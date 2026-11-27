@@ -1,0 +1,47 @@
+"""Runtime settings, read from environment variables (no network, no secrets in code)."""
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+
+MIN_SECRET_LEN = 32
+
+
+@dataclass(frozen=True)
+class Settings:
+    database_url: str
+    jwt_secret: str
+    ems_env: str
+    jwt_expire_minutes: int
+    cors_origins: tuple[str, ...]
+    ingest_max_future_skew_s: int
+    max_gap_minutes: float
+    max_csv_bytes: int
+    bcrypt_rounds: int
+
+    @property
+    def is_test(self) -> bool:
+        return self.ems_env == "test"
+
+
+def get_settings() -> Settings:
+    """Read settings fresh from the environment (cheap; keeps tests/monkeypatching simple)."""
+    e = os.environ
+    return Settings(
+        database_url=e.get("DATABASE_URL", "sqlite:///./ems.db"),
+        jwt_secret=e.get("JWT_SECRET", ""),
+        ems_env=e.get("EMS_ENV", "production"),
+        jwt_expire_minutes=int(e.get("JWT_EXPIRE_MINUTES", "60")),
+        cors_origins=tuple(o.strip() for o in e.get("CORS_ORIGINS", "").split(",") if o.strip()),
+        ingest_max_future_skew_s=int(e.get("INGEST_MAX_FUTURE_SKEW_S", "120")),
+        max_gap_minutes=float(e.get("MAX_GAP_MINUTES", "15")),
+        max_csv_bytes=int(e.get("MAX_CSV_BYTES", str(10 * 1024 * 1024))),
+        bcrypt_rounds=int(e.get("BCRYPT_ROUNDS", "12")),
+    )
+
+
+def validate_for_startup(s: Settings) -> None:
+    """Refuse to start with a missing/short JWT secret (except EMS_ENV=test)."""
+    if not s.is_test and len(s.jwt_secret) < MIN_SECRET_LEN:
+        raise RuntimeError(
+            f"JWT_SECRET must be set and at least {MIN_SECRET_LEN} characters long")
