@@ -86,14 +86,21 @@ async function fillMeterPicker(siteSel, meterSel, onChange) {
   let gen = 0;
   async function loadMeters() {
     const mine = ++gen;
-    // Drop the previous site's meter (and its results) immediately.
+    // Drop the previous site's meter and results immediately (also invalidates pending calculations).
     clear(meterSel);
     meterSel._meters = [];
-    if (!siteSel.value) { onChange(); return; }
-    const meters = await api("/meters?site_id=" + encodeURIComponent(siteSel.value));
+    onChange();
+    if (!siteSel.value) return;
+    let meters;
+    try {
+      meters = await api("/meters?site_id=" + encodeURIComponent(siteSel.value));
+    } catch (e) {
+      if (mine === gen) $("#err").textContent = e.message;   // only for the still-selected site
+      return;
+    }
     if (mine !== gen) return;           // a newer site selection superseded this response
     meterSel._meters = meters;
-    for (const m of meters) meterSel.append(el("option", { value: m.id }, m.name + (m.is_demo ? "（模擬）" : "")));
+    for (const m of meters) meterSel.append(el("option", { value: m.id }, m.name + (m.is_demo && !m.name.includes("模擬") ? "（模擬）" : "")));
     onChange();
   }
   siteSel.addEventListener("change", loadMeters);
@@ -109,7 +116,7 @@ function notes(items, cls) {
 // ---------- charts (inline SVG) ----------
 function barChart(target, bars, { unit, height = 220, yMax } = {}) {
   /* bars: [{label, value, muted, title}] */
-  const W = 900, H = height, pad = { l: 48, r: 10, t: 10, b: 28 };
+  const W = 900, H = height, pad = { l: 48, r: 10, t: 24, b: 28 };
   const svg = svgEl("svg", { class: "chart", viewBox: `0 0 ${W} ${H}`, role: "img" });
   const max = yMax || Math.max(1, ...bars.map((b) => b.value)) * 1.1;
   const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;

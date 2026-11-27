@@ -31,8 +31,6 @@ def _register_errors(db: Session, meter_id: int, fresh: list[tuple[int, ReadingI
     """Cumulative registers must not decrease along time (vs stored readings and inside the batch)."""
     if not fresh:
         return []
-    lo = min(_utc(r.ts) for _, r in fresh)
-    hi = max(_utc(r.ts) for _, r in fresh)
     R = models.Reading
     errors: dict[int, str] = {}
     for field in REGISTERS:
@@ -41,12 +39,23 @@ def _register_errors(db: Session, meter_id: int, fresh: list[tuple[int, ReadingI
             continue
         base = select(R.ts, col).where(R.meter_id == meter_id, col.is_not(None))
         points: list[tuple[datetime, float, int | None]] = []   # (ts, value, item index or None)
-        for row in db.execute(base.where(R.ts >= lo, R.ts <= hi)):
-            points.append((row[0], row[1], None))
-        for row in db.execute(base.where(R.ts < lo).order_by(R.ts.desc()).limit(1)):
-            points.append((row[0], row[1], None))
-        for row in db.execute(base.where(R.ts > hi).order_by(R.ts).limit(1)):
-            points.append((row[0], row[1], None))
+        # Only the stored readings adjacent (in time) to an incoming one can matter, so look up the
+        # nearest stored value on each side of every incoming point instead of loading the span.
+        seen_rows: set[datetime] = set()
+
+        def add(row):
+            if row[0] not in seen_rows:
+                seen_rows.add(row[0])
+                points.append((row[0], row[1], None))
+
+        for idx, r in fresh:
+            if getattr(r, field) is None:
+                continue
+            t = _utc(r.ts)
+            for row in db.execute(base.where(R.ts < t).order_by(R.ts.desc()).limit(1)):
+                add(row)
+            for row in db.execute(base.where(R.ts > t).order_by(R.ts).limit(1)):
+                add(row)
         for idx, r in fresh:
             v = getattr(r, field)
             if v is not None:
@@ -103,9 +112,11 @@ def _store_once(db, meter, items, source, user_id) -> dict:
             continue
         seen.add(key)
         fresh.append((idx, r))
-    lo, hi = min(seen), max(seen)
-    existing = set(db.scalars(select(models.Reading.ts).where(
-        models.Reading.meter_id == meter.id, models.Reading.ts >= lo, models.Reading.ts <= hi)))
+    existing: set[datetime] = set()    # exact-timestamp lookup: cost follows the batch, not the history
+    wanted = list(seen)
+    for i in range(0, len(wanted), 500):
+        existing.update(_utc(t) for t in db.scalars(select(models.Reading.ts).where(
+            models.Reading.meter_id == meter.id, models.Reading.ts.in_(wanted[i:i + 500]))))
     fresh = [(i, r) for i, r in fresh if _utc(r.ts) not in existing]
 
     errors = _register_errors(db, meter.id, fresh)

@@ -94,7 +94,7 @@ ts,power_kw,energy_kwh_total,kvarh_total
 
 `health`、`auth/login`（OAuth2 password form）、`auth/me`、`orgs`、`users`、`sites`、`meters`（含 PATCH 契約容量/電價欄位）、
 `meters/{id}/daily?start=&end=`、`meters/{id}/demand?date=`、`sites/{id}/summary?date=`、`meters/{id}/bill?month=YYYY-MM`、
-`meters/{id}/scope2?year=`、`orgs/{id}/scope2?year=`。互動文件：非 production 環境 `/docs`。
+`meters/{id}/scope2?year=`、`orgs/{id}/scope2?year=`。互動文件：非 production 環境 API 容器內提供 `/docs`、`/openapi.json`。nginx 不代理這些路徑，且其 CSP（`script-src 'self'`）會擋下 Swagger UI 的 CDN 資源；開發時請用 `docker compose exec api python -c "import urllib.request;print(urllib.request.urlopen('http://localhost:8000/openapi.json').read().decode())"` 取得 schema，或暫時為 api 服務加上 `ports: ["127.0.0.1:8000:8000"]` 直接開 `http://127.0.0.1:8000/docs`（瀏覽器直連 api，不經 nginx、不受其 CSP 限制）。
 `GET /forecast` 回 501「未啟用」。
 
 ## 計算方式摘要

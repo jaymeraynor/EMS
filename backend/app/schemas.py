@@ -137,12 +137,17 @@ class MeterCreated(MeterOut):
     api_key: str  # shown exactly once
 
 
+MAX_POWER_KW = 1e7        # 10 GW
+MAX_REGISTER = 1e12       # cumulative kWh / kvarh
+
+
 class ReadingIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     ts: AwareDatetime
-    power_kw: float = Field(ge=0, allow_inf_nan=False)
-    energy_kwh_total: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
-    kvarh_total: Optional[float] = Field(default=None, ge=0, allow_inf_nan=False)
+    # Practical bounds keep stored data inside what integration, billing and carbon can handle.
+    power_kw: float = Field(ge=0, le=MAX_POWER_KW, allow_inf_nan=False)
+    energy_kwh_total: Optional[float] = Field(default=None, ge=0, le=MAX_REGISTER, allow_inf_nan=False)
+    kvarh_total: Optional[float] = Field(default=None, ge=0, le=MAX_REGISTER, allow_inf_nan=False)
 
     @field_validator("ts")
     @classmethod

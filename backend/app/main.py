@@ -18,7 +18,7 @@ def create_app() -> FastAPI:
     if settings.cors_origins:
         app.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins),
                            allow_methods=["GET", "POST", "PATCH"],
-                           allow_headers=["Authorization", "Content-Type"])
+                           allow_headers=["Authorization", "Content-Type", "X-API-Key"])
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError):

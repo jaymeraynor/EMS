@@ -17,6 +17,14 @@ router = APIRouter(tags=["energy"])
 MAX_DAILY_RANGE_DAYS = 400
 
 
+def _window(d: date):
+    """Taipei-day UTC window; 422 for dates whose window cannot be represented."""
+    try:
+        return day_window(d)
+    except (ValueError, OverflowError):
+        raise HTTPException(422, f"日期超出支援範圍: {d.isoformat()}") from None
+
+
 def _block_json(b) -> dict:
     return {"start": b.start.isoformat(), "kwh": b.kwh, "demand_kw": b.demand_kw,
             "coverage": b.coverage, "complete": b.complete}
@@ -28,7 +36,7 @@ def daily(meter: MeterOfUser, db: DB, start: date, end: date):
         raise HTTPException(422, "end 不可早於 start")
     if (end - start).days + 1 > MAX_DAILY_RANGE_DAYS:
         raise HTTPException(422, f"範圍最多 {MAX_DAILY_RANGE_DAYS} 天")
-    lo, hi = day_window(start)[0], day_window(end)[1]
+    lo, hi = _window(start)[0], _window(end)[1]
     samples = load_samples(db, meter.id, lo, hi)
     days = daily_kwh(samples, start, end, get_settings().max_gap_minutes)
     return [{"date": d.date.isoformat(), "kwh": d.kwh, "coverage": d.coverage,
@@ -38,7 +46,7 @@ def daily(meter: MeterOfUser, db: DB, start: date, end: date):
 @router.get("/meters/{meter_id}/demand")
 def demand(meter: MeterOfUser, db: DB, date: date):
     """15-minute demand blocks for one Taipei day. Max demand uses complete blocks only."""
-    lo, hi = day_window(date)
+    lo, hi = _window(date)
     samples = load_samples(db, meter.id, lo, hi)
     blocks = demand_blocks(samples, date, get_settings().max_gap_minutes)
     complete = [b for b in blocks if b.complete]
@@ -57,7 +65,7 @@ def site_summary(site_id: int, db: DB, user: CurrentUser, date: date):
     site = get_site_for(db, user, site_id)
     meters = db.scalars(select(models.Meter).where(models.Meter.site_id == site.id)
                         .order_by(models.Meter.id)).all()
-    lo, hi = day_window(date)
+    lo, hi = _window(date)
     gap = get_settings().max_gap_minutes
     per_meter, sums, all_complete = [], None, None
     for m in meters:
